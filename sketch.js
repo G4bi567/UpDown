@@ -6,35 +6,6 @@ let boxes = [];
 let ground;
 let player1; // Declare player1 as a global variable
 
-class Player {
-    constructor(x, y, w, h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        let options = {
-            friction: 0.3,
-        };
-        this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
-        
-        Composite.add(world, this.body);
-    }
-
-    show() {
-        let pos = this.body.position;
-        let angle = this.body.angle;
-        push();
-        translate(pos.x, pos.y);
-        rotate(angle);
-        rectMode(CENTER);
-        strokeWeight(1);
-        stroke(255);
-        fill("red");
-        rect(0, 0, this.w, this.h);
-        pop();
-    }
-}
-
 function setup() {
     createCanvas(1024, 576);
     engine = Engine.create();
@@ -54,13 +25,13 @@ window.addEventListener("keydown", (event) => {
     switch (event.key) {
         case "d":
             // Set the velocity of player1
-            Matter.Body.setVelocity(player1.body, { x: 5, y: 0 });
+            Matter.Body.setVelocity(player1.body, { x: 5, y: player1.body.velocity.y });
             break;
         case "a":
-            Matter.Body.setVelocity(player1.body, { x: -5, y: 0 });
+            Matter.Body.setVelocity(player1.body, { x: -5, y: player1.body.velocity.y });
             break;
         case "w":
-            Matter.Body.setVelocity(player1.body, { x: 0, y: -10 });
+            Matter.Body.setVelocity(player1.body, { x:  player1.body.velocity.x, y: -10 });
             break;
     }
 });

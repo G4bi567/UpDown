@@ -5,7 +5,8 @@ class Player {
         this.w = w;
         this.h = h;
         let options = {
-            friction: 0
+            friction: 0,
+            inertia: Infinity
         }
         this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
         
