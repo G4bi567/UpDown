@@ -5,8 +5,9 @@ class Boundary {
         this.w = w;
         this.h = h;
         let options = {
-            friction: 0.7,
-            isStatic: true
+            friction: 0,
+            isStatic: true,
+            restitution: 0
         }
         this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
         Composite.add(world, this.body);
