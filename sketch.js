@@ -1,21 +1,55 @@
-const { Engine, World, Bodies, Composite } = Matter;
+const { Engine, World, Bodies, Composite } = Matter; // Import required Matter.js modules
 
 let engine;
 let world;
 let boxes = [];
 let ground;
 let player1;
-const respawnPosition = { x: 100, y: 100 }; // Set the respawn position
+const respawnPosition = { x: 100, y: 100 };
+let matterEngine; // Create a separate Matter.js engine for events
+let playerContacted = false;
 
 function setup() {
     createCanvas(1024, 576);
+
+    // Initialize the main Matter.js engine for the world physics
     engine = Engine.create();
     world = engine.world;
     ground = new Boundary(0, height, width, 100);
     Composite.add(world, ground);
     player1 = new Player(100, 100, 100, 100);
     Composite.add(world, player1);
+
+    // Initialize a separate Matter.js engine for events
+    matterEngine = Engine.create();
+    World.add(matterEngine.world, [player1.body, ground.body]);
+
+    // Set up the collision event handling
+    Matter.Events.on(matterEngine, 'collisionStart', (event) => {
+        console.log("Collision event started"); // Add this line
+        const pairs = event.pairs;
+        for (let i = 0; i < pairs.length; i++) {
+            const pair = pairs[i];
+            if (pair.bodyA === player1.body && pair.bodyB.label === "ground") {
+                console.log("Player touched the ground");
+            } else if (pair.bodyA === player1.body && pair.bodyB.label === 'box') {
+                console.log("Player touched a box");
+            }
+        }
+    });
+    
+    
+    Matter.Events.on(matterEngine, 'collisionEnd', (event) => {
+        const pairs = event.pairs;
+        for (let i = 0; i < pairs.length; i++) {
+            const pair = pairs[i];
+            if ((pair.bodyA === player1.body && pair.bodyB === ground.body) || (pair.bodyB === player1.body && pair.bodyA === ground.body)) {
+                playerContacted = false; // Reset the contact state when contact ends
+            }
+        }
+    });
 }
+
 
 function mouseDragged() {
     boxes.push(new Box(mouseX, mouseY, random(10, 40), random(10, 40)));
@@ -29,12 +63,9 @@ function jump() {
 const keys = { d: false, a: false };
 
 window.addEventListener("keydown", (event) => {
-    console.log(player1.body.velocity.y)
     if (event.key in keys) {
-        console.log("a")
         keys[event.key] = true;}
     else if (event.key === 'w' && Math.abs(player1.body.velocity.y)  < 0.01)  {
-            console.log("j")
             jump();
         }
 
@@ -47,17 +78,6 @@ window.addEventListener("keyup", (event) => {
     }
 });
 
-Matter.Events.on(engine, 'collisionStart', (event) => {
-    const pairs = event.pairs;
-    for (let i = 0; i < pairs.length; i++) {
-        const pair = pairs[i];
-        if (pair.bodyA === player1.body && pair.bodyB === ground.body) {
-            // Collision between player and ground detected, allow jumping
-            console.log("true")
-            player1.canJump = true;
-        }
-    }
-});
 
 function respawnPlayer() {
     Matter.Body.setPosition(player1.body, respawnPosition);

@@ -8,8 +8,9 @@ class Box {
             friction: 0.7,
             restitution: 0.6
         }
-        this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
         
+        this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
+        this.body.label = "box";
         Composite.add(world, this.body);
     }
 

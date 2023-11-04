@@ -9,7 +9,9 @@ class Boundary {
             isStatic: true,
             restitution: 0
         }
+        
         this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
+        this.body.label = "ground";
         Composite.add(world, this.body);
     }
 
