@@ -21,32 +21,41 @@ function mouseDragged() {
     boxes.push(new Box(mouseX, mouseY, random(10, 40), random(10, 40)));
 }
 
+function jump() {
+    const force = { x: 0, y: -0.3 }; // Adjust the y value for jump strength
+    Matter.Body.applyForce(player1.body, player1.body.position, force);
+}
+
 const keys = { d: false, a: false };
 
 window.addEventListener("keydown", (event) => {
-    switch (event.key) {
-        case "d":
-            keys.d = true;
-            break;
-        case "a":
-            keys.a = true;
-            break;
-        case "w":
-            if (Matter.Body.getVelocity(player1.body).y === 0) { // Check for vertical velocity
-                Matter.Body.setVelocity(player1.body, { x: player1.body.velocity.x, y: -10 });
-            }
-            break;
-    }
+    console.log(player1.body.velocity.y)
+    if (event.key in keys) {
+        console.log("a")
+        keys[event.key] = true;}
+    else if (event.key === 'w' && Math.abs(player1.body.velocity.y)  < 0.01)  {
+            console.log("j")
+            jump();
+        }
+
+    
 });
 
 window.addEventListener("keyup", (event) => {
-    switch (event.key) {
-        case "d":
-            keys.d = false;
-            break;
-        case "a":
-            keys.a = false;
-            break;
+    if (event.key in keys) {
+        keys[event.key] = false;
+    }
+});
+
+Matter.Events.on(engine, 'collisionStart', (event) => {
+    const pairs = event.pairs;
+    for (let i = 0; i < pairs.length; i++) {
+        const pair = pairs[i];
+        if (pair.bodyA === player1.body && pair.bodyB === ground.body) {
+            // Collision between player and ground detected, allow jumping
+            console.log("true")
+            player1.canJump = true;
+        }
     }
 });
 
