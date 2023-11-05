@@ -7,22 +7,29 @@ let ground;
 let sol;
 let player1;
 const respawnPosition = { x: 100, y: 100 };
+let backgroundImage; // Declare a variable to store the image
+
 
 function setup() {
-    createCanvas(1024, 576);
+    createCanvas(554, 1152);
 
     engine = Engine.create();
     world = engine.world;
     ground = new Boundary(0, 400, 400, 100);
     Composite.add(world, ground);
-    sol = new Boundary(400, 200, 500, 100);
+    sol = new Boundary(32, 32, 32, 32);
     Composite.add(world, sol);
     console.log(sol)
-    player1 = new Player(100, 100, 50, 100);
+    player1 = new Player(32, 32, 16, 16);
     Composite.add(world, player1);
 
 
 }
+
+function preload() {
+    // Load the image before setting up the canvas
+    backgroundImage = loadImage('Sprites/Background/sans titre.png');
+  }
 
 const keys = { d: false, a: false };
 
@@ -44,7 +51,7 @@ function mouseDragged() {
 }
 
 function jump() {
-    const force = { x: 0, y: -0.3 };
+    const force = { x: 0, y: -0.007};
     Matter.Body.applyForce(player1.body, player1.body.position, force);
 }
 
@@ -54,7 +61,7 @@ function respawnPlayer() {
 }
 
 function draw() {
-    background(51);
+    image(backgroundImage, 0, 0);
     Engine.update(engine);
 
     for (let i = 0; i < boxes.length; i++) {
