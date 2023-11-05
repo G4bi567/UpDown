@@ -11,7 +11,7 @@ let backgroundImage; // Declare a variable to store the image
 let CollisionBlocks=[]
 
 function setup() {
-    createCanvas(554, 1152);
+    createCanvas(560, 1168);
 
     engine = Engine.create();
     world = engine.world;
@@ -66,7 +66,7 @@ function mouseDragged() {
 }
 
 function jump() {
-    const force = { x: 0, y: -0.007};
+    const force = { x: 0, y: -0.005};
     Matter.Body.applyForce(player1.body, player1.body.position, force);
 }
 
