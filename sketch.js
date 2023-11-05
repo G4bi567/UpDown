@@ -8,7 +8,7 @@ let sol;
 let player1;
 const respawnPosition = { x: 100, y: 100 };
 let backgroundImage; // Declare a variable to store the image
-
+let CollisionBlocks=[]
 
 function setup() {
     createCanvas(554, 1152);
@@ -17,14 +17,29 @@ function setup() {
     world = engine.world;
     ground = new Boundary(0, 400, 400, 100);
     Composite.add(world, ground);
-    sol = new Boundary(32, 32, 32, 32);
+    sol = new Boundary(400, 600, 600, 50);
     Composite.add(world, sol);
     console.log(sol)
     player1 = new Player(32, 32, 16, 16);
     Composite.add(world, player1);
-
-
+    var floorCollision2D=[]
+    for(let i = 0;i < floorCollision.length; i+=35 ){
+        floorCollision2D.push(floorCollision.slice(i,i+35))
+    }
+     
+    floorCollision2D.forEach((row,y) => {
+        row.forEach((symbol,x )=>{
+            if (symbol==3193){
+                console.log("hello");
+                CollisionBlocks.push(new Boundary(x*16, y*16, 16, 16));
+            }
+        })
+        
+    });
+    Composite.add(world, CollisionBlocks);
 }
+
+
 
 function preload() {
     // Load the image before setting up the canvas
@@ -89,7 +104,9 @@ function draw() {
     ground.show();
     player1.show();
     sol.show()
-
+    for (let i = 0; i < CollisionBlocks.length; i++) {
+        CollisionBlocks[i].show();
+    }
     if (player1.body.position.y > height + 100) {
         respawnPlayer();
     }
