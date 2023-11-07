@@ -31,7 +31,7 @@ class Boundary {
         rectMode(CENTER);
         strokeWeight(1);
         noStroke();
-        fill(0); // Set the fill color (black).
+        fill(0,0,0,0); // Set the fill color (black).
 
         rect(0, 0, this.w, this.h);
 

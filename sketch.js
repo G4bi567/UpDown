@@ -2,7 +2,7 @@ const { Engine, World, Composite, Bodies } = Matter;
 const respawnPosition = { x: 0, y: 1050 };
 const keys = { d: false, a: false };
 
-let engine, world, boxes = [],zoom=2, ground, sol, player1, backgroundImage, CollisionBlocks = [], platformCollisionBlocks = [];
+let engine, world, boxes = [],zoom=4, ground, sol, player1, backgroundImage, CollisionBlocks = [], platformCollisionBlocks = [];
 
 function createCollisionBlocks(data, collisionArray, yOffset, height) {
     const collision2D = [];
@@ -23,10 +23,11 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     engine = Engine.create();
     world = engine.world;
-    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 28);
+    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
     Composite.add(world, player1);
     createCollisionBlocks(floorCollision, CollisionBlocks, 16, 32);
     createCollisionBlocks(platformCollision, platformCollisionBlocks, 1, 2);
+    
 }
 
 function preload() {
@@ -40,6 +41,7 @@ const keyState = {
 
 window.addEventListener("keydown", (event) => {
     if (event.key in keyState) {
+        console.log("click")
         keyState[event.key] = true;
     } else if (event.key === 'w' && Math.abs(player1.body.velocity.y) < 0.01) {
         jump();
@@ -56,21 +58,21 @@ function applyPlayerForces() {
     let playerVelocity = { x: 0, y: player1.body.velocity.y };
 
     if (keyState.a) {
-        left();
+        console.log("a")
+        playerVelocity.x+=-2.5;
     }
-
     if (keyState.d) {
-        right();
+        console.log("d")
+        playerVelocity.x+=2.5;
     }
-
     Matter.Body.setVelocity(player1.body, playerVelocity);
 }
 
 function handlePlayerPosition() {
     if (player1.body.position.x < player1.w / 2) {
         Matter.Body.setPosition(player1.body, { x: player1.w / 2, y: player1.body.position.y });
-    } else if (player1.body.position.x > width / (zoom - 1) - (player1.w / 2)) {
-        Matter.Body.setPosition(player1.body, { x: width / (zoom - 1) - (player1.w / 2), y: player1.body.position.y });
+    } else if (player1.body.position.x > width / (zoom - 2) - (player1.w / 2)) {
+        Matter.Body.setPosition(player1.body, { x: width / (zoom - 2) - (player1.w / 2), y: player1.body.position.y });
     }
 }
 
@@ -125,15 +127,6 @@ function jump() {
     Matter.Body.applyForce(player1.body, player1.body.position, force);
 }
 
-function right() {
-    const force = { x: 0.004, y: 0 };
-    Matter.Body.applyForce(player1.body, player1.body.position, force);
-}
-
-function left() {
-    const force = { x: -0.004, y: 0 };
-    Matter.Body.applyForce(player1.body, player1.body.position, force);
-}
 
 function respawnPlayer() {
     Matter.Body.setPosition(player1.body, respawnPosition);
