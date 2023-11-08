@@ -26,7 +26,7 @@ class Player {
         this.frames = 8;
         this.currentFrame = 0;
 
-        this.frameRate = 3; // Set the frame rate (e.g., 10 frames per second)
+        this.frameRate = 10; // Set the frame rate (e.g., 10 frames per second)
         this.frameCounter = 0;
          // Set the frame rate for the entire sketch
     }
