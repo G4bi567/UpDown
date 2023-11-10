@@ -1,5 +1,5 @@
 const { Engine, World, Composite, Bodies } = Matter;
-let spawnPlayer2 = true;
+let spawnPlayer2 = false;
 let player2;
 const respawnPosition = { x: 100, y: 1050 };
 const respawnPositionPlayer2 = { x: respawnPosition.x + 100, y: respawnPosition.y };
@@ -96,48 +96,100 @@ function handlePlayerPosition() {
 }
 
 function draw() {
-    // Calculate the camera position to follow the player
-    let cameraX = (width / 2) - player1.body.position.x * zoom;
-    let cameraY = (height / 2) - player1.body.position.y * zoom;
-    // Limit the camera position to stay within the world bounds window
-
-    // Set the scale (zoom)
-    scale(zoom);
-
-    // Translate and draw everything accordingly
-    translate(cameraX / zoom, cameraY / zoom);
-
-    // Clear the canvas
-    background(0);
-
-    Engine.update(engine);
-
-    // Draw the background image without applying translation
-    image(backgroundImage, 0, 0);
-
-
-    if (player1.body.position.y > height * 2+100) {
-        respawnPlayer();
-    }
-
-    applyPlayerForces(player1);
+    // Check if spawnPlayer2 is true
     if (spawnPlayer2) {
-        applyPlayerForces(player2);
-    }
-    /*
-    handlePlayerPosition();
-    */
-    player1.show();
-    if (spawnPlayer2) {
-        player2.show();
-    }
-    for (let i = 0; i < CollisionBlocks.length; i++) {
-        CollisionBlocks[i].show();
-    }
+        // Calculate the midpoint between the two players
+        
+        let midpointX = (player1.body.position.x + player2.body.position.x) / 2;
+        let midpointY = (player1.body.position.y + player2.body.position.y)/2 ;
 
-    // Reset the translation and scale to their original states
-    translate(-cameraX / zoom, -cameraY / zoom);
-    scale(1 / zoom);
+        // Calculate the distance between the two players
+        let distanceBetweenPlayers = dist(player1.body.position.x, player1.body.position.y, player2.body.position.x, player2.body.position.y);
+        
+        // Set the scale (zoom)
+        let dynamicZoom = spawnPlayer2 ? map(distanceBetweenPlayers, 0, 500, 3, 1) : zoom;
+        console.log(-midpointY * dynamicZoom)
+        // Calculate the camera position based on the midpoint
+        let cameraX = -midpointX * dynamicZoom + width / 2;
+        let cameraY = -midpointY * dynamicZoom + height / 2;
+        if (-midpointY * dynamicZoom<-1400){
+
+        }
+        // Limit the camera position to stay within the world bounds window
+
+        // Translate and draw everything accordingly
+        translate(cameraX / dynamicZoom, cameraY );
+
+        // Set the scale (zoom)
+        scale(dynamicZoom);
+
+        // Clear the canvas
+        background(0);
+
+        Engine.update(engine);
+
+        // Draw the background image without applying translation
+        image(backgroundImage, 0, 0);
+
+        if (player1.body.position.y > height * 2 + 100) {
+            respawnPlayer(player1);
+        }
+        if (player2.body.position.y > height * 2 + 100) {
+            respawnPlayer(player2);
+        }
+
+        applyPlayerForces(player1);
+        if (spawnPlayer2) {
+            applyPlayerForces(player2);
+        }
+
+        player1.show();
+        if (spawnPlayer2) {
+            player2.show();
+        }
+        for (let i = 0; i < CollisionBlocks.length; i++) {
+            CollisionBlocks[i].show();
+        }
+
+        // Reset the translation and scale to their original states
+        translate(-cameraX / dynamicZoom, -cameraY / dynamicZoom);
+        scale(1 / dynamicZoom);
+    } else {
+        // The original code for single player
+        let cameraX = -player1.body.position.x * zoom + width / 2;
+        let cameraY = -player1.body.position.y * zoom + height / 2;
+
+        // Limit the camera position to stay within the world bounds window
+
+        // Set the scale (zoom)
+        scale(zoom);
+
+        // Translate and draw everything accordingly
+        translate(cameraX / zoom, cameraY / zoom);
+
+        // Clear the canvas
+        background(0);
+
+        Engine.update(engine);
+
+        // Draw the background image without applying translation
+        image(backgroundImage, 0, 0);
+
+        if (player1.body.position.y > height * 2 + 100) {
+            respawnPlayer(player1);
+        }
+
+        applyPlayerForces(player1);
+
+        player1.show();
+        for (let i = 0; i < CollisionBlocks.length; i++) {
+            CollisionBlocks[i].show();
+        }
+
+        // Reset the translation and scale to their original states
+        translate(-cameraX / zoom, -cameraY / zoom);
+        scale(1 / zoom);
+    }
 }
 
 
@@ -147,7 +199,7 @@ function jump(player) {
 }
 
 
-function respawnPlayer() {
-    Matter.Body.setPosition(player1.body, respawnPosition);
-    Matter.Body.setVelocity(player1.body, { x: 0, y: 0 });
+function respawnPlayer(player) {
+    Matter.Body.setPosition(player.body, respawnPosition);
+    Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
 }
