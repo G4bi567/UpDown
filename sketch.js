@@ -15,7 +15,7 @@ function startGame(mode) {
 
 
 const { Engine, World, Composite, Bodies } = Matter;
-let spawnPlayer2 = false;
+let spawnPlayer2 = true;
 let player2;
 const respawnPosition = { x: 100, y: 1050 };
 const respawnPositionPlayer2 = { x: respawnPosition.x + 100, y: respawnPosition.y };
@@ -219,12 +219,7 @@ function draw() {
         for (let i = 0; i < CollisionBlocks.length; i++) {
             const block = CollisionBlocks[i];
             block.show();
-$
-            if (isPlayer1Touching(block)) {
-                // Player1 is touching this block
-                // Perform actions here
-                console.log("Player1 is touching a block");
-            }
+
         }
         player1.show();
         if (spawnPlayer2) {
