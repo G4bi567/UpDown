@@ -1,12 +1,80 @@
+// Add this function in your JavaScript code
+function startGame(mode) {
+    if (mode === 'solo') {
+        spawnPlayer2 = false;
+    } else if (mode === 'local') {
+        spawnPlayer2 = true;
+    } else if (mode === 'multiplayer') {
+        // Add logic for multiplayer if needed
+    }
+    document.getElementById('menu').style.display = 'none';
+    // Rest of your setup logic
+    setup();
+}
+
+
+
 const { Engine, World, Composite, Bodies } = Matter;
 let spawnPlayer2 = false;
 let player2;
 const respawnPosition = { x: 100, y: 1050 };
 const respawnPositionPlayer2 = { x: respawnPosition.x + 100, y: respawnPosition.y };
 const keys = { d: false, a: false, ArrowLeft: false, ArrowRight: false };
-
+let lookingleft1=false
+let lookingleft2=false
 
 let engine, world, boxes = [],zoom=4, ground, sol, player1, backgroundImage, CollisionBlocks = [], platformCollisionBlocks = [];
+let lastWalkSoundTime = 0;
+let walkSoundDelay = 1000;
+let jumpSound;
+let landingSound;
+let movementSound;
+let backgroundMusic
+let isPlayerInAir = false;
+
+let menuVisible = true;
+
+
+
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    engine = Engine.create();
+    world = engine.world;
+    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
+    player1.body.label = "player1";
+    Composite.add(world, player1);
+    
+    if (spawnPlayer2) {
+        player2 = new Player(respawnPositionPlayer2.x, respawnPositionPlayer2.y, 16, 24);
+        player2.body.label = "player2";
+        Composite.add(world, player2);
+    }
+    createCollisionBlocks(floorCollision, CollisionBlocks, 16, 32);
+    createCollisionBlocks(platformCollision, platformCollisionBlocks, 5, 2);
+    movementSound.setVolume(0.2);
+    landingSound.setVolume(0.2);
+    jumpSound.setVolume(0.3);
+    backgroundMusic.setVolume(0.08)
+    backgroundMusic.play()
+
+}
+
+function preload() {
+    backgroundImage = loadImage('Sprites/Background/new.png');
+    backgroundMusic = loadSound('Sprites/sound/background.mp3');
+    jumpSound = loadSound('Sprites/sound/jump.mp3');
+    landingSound = loadSound('Sprites/sound/fall.mp3');
+    movementSound = loadSound('Sprites/sound/walk.mp3');
+}
+
+function playWalkSound() {
+    const currentTime = Date.now();
+    if (currentTime - lastWalkSoundTime > walkSoundDelay) {
+        walkSoundDelay = 4000
+        movementSound.loop();
+        lastWalkSoundTime = currentTime;
+    }
+}
 
 function createCollisionBlocks(data, collisionArray, yOffset, height) {
     const collision2D = [];
@@ -23,69 +91,73 @@ function createCollisionBlocks(data, collisionArray, yOffset, height) {
     Composite.add(world, collisionArray);
 }
 
-function setup() {
-    createCanvas(windowWidth, windowHeight);
-    engine = Engine.create();
-    world = engine.world;
-    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
-    Composite.add(world, player1);
-    if (spawnPlayer2) {
-        console.log("v2")
-        player2 = new Player(respawnPositionPlayer2.x, respawnPositionPlayer2.y, 16, 24);
-        Composite.add(world, player2);
-    }
-    createCollisionBlocks(floorCollision, CollisionBlocks, 16, 32);
-    createCollisionBlocks(platformCollision, platformCollisionBlocks, 5, 2);
-    
+
+function isPlayer1Touching(object) {
+
+
+    const collision = Matter.SAT.collides(player1.body, object.body);
+
+    return collision ? collision.collided : false;
 }
 
-function preload() {
-    backgroundImage = loadImage('Sprites/Background/new.png');
-}
 
 
 window.addEventListener("keydown", (event) => {
     if (event.key in keys) {
-        console.log(event.key)
         keys[event.key] = true;
+        
+        
     } else if (event.key === 'w' && Math.abs(player1.body.velocity.y) < 0.01) {
         jump(player1);
+        jumpSound.play()
     }else if (event.key === 'ArrowUp' && Math.abs(player2.body.velocity.y) < 0.01 && spawnPlayer2 == true) {
         jump(player2);
+        jumpSound.play()
+    }else   if (event.key === 'Escape') {
+        // Toggle the display of the menu
+        const menu = document.getElementById('menu');
+        menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
     }
 });
 
 window.addEventListener("keyup", (event) => {
     if (event.key in keys) {
         keys[event.key] = false;
+        movementSound.stop();
+        walkSoundDelay = 0;
     }
 });
 
 function applyPlayerForces(player) {
     let playerVelocity = { x: 0, y: player.body.velocity.y };
-
+    
     if(player == player1){
     if (keys.a) {
-        console.log("a")
+        playWalkSound()
         playerVelocity.x+=-2.5;
+        lookingleft1=true
     }
     if (keys.d) {
-        console.log("d")
+        playWalkSound()
         playerVelocity.x+=2.5;
+        lookingleft1=false
     }}else{
-        console.log("hello")
+
         if (keys.ArrowLeft) {
-            console.log("l")
+            playWalkSound()
             playerVelocity.x+=-2.5;
+            lookingleft2=true
         }
         if (keys.ArrowRight) {
-            console.log("r")
+            playWalkSound()
             playerVelocity.x+=2.5;
+            lookingleft2=false
         }
     }
 
     Matter.Body.setVelocity(player.body, playerVelocity);
 }
+
 
 function handlePlayerPosition() {
     if (player1.body.position.x < player1.w / 2) {
@@ -97,6 +169,7 @@ function handlePlayerPosition() {
 
 function draw() {
     // Check if spawnPlayer2 is true
+    
     if (spawnPlayer2) {
         // Calculate the midpoint between the two players
         
@@ -108,7 +181,7 @@ function draw() {
         
         // Set the scale (zoom)
         let dynamicZoom = spawnPlayer2 ? map(distanceBetweenPlayers, 0, 500, 3, 1) : zoom;
-        console.log(-midpointY * dynamicZoom)
+
         // Calculate the camera position based on the midpoint
         let cameraX = -midpointX * dynamicZoom + width / 2;
         let cameraY = -midpointY * dynamicZoom + height / 2;
@@ -143,12 +216,19 @@ function draw() {
             applyPlayerForces(player2);
         }
 
+        for (let i = 0; i < CollisionBlocks.length; i++) {
+            const block = CollisionBlocks[i];
+            block.show();
+$
+            if (isPlayer1Touching(block)) {
+                // Player1 is touching this block
+                // Perform actions here
+                console.log("Player1 is touching a block");
+            }
+        }
         player1.show();
         if (spawnPlayer2) {
             player2.show();
-        }
-        for (let i = 0; i < CollisionBlocks.length; i++) {
-            CollisionBlocks[i].show();
         }
 
         // Reset the translation and scale to their original states
@@ -183,9 +263,32 @@ function draw() {
 
         player1.show();
         for (let i = 0; i < CollisionBlocks.length; i++) {
-            CollisionBlocks[i].show();
+            const block = CollisionBlocks[i];
+            block.show();
+            if (isPlayer1Touching(block)) {
+                if (isPlayerInAir){
+                    isPlayerInAir=false
+                    landingSound.play()
+                }
+                // Player1 is touching this block
+                // Perform actions here
+                console.log("Player1 is touching a block");
+            }
         }
-
+        for (let i = 0; i < platformCollisionBlocks.length; i++) {
+            const platform = platformCollisionBlocks[i];
+            platform.show();
+    
+            if (isPlayer1Touching(platform)) {
+                if (isPlayerInAir){
+                    isPlayerInAir=false
+                    landingSound.play()
+                }
+                // Player1 is touching this platform
+                // Perform actions here
+                console.log("Player1 is touching a platform");
+            }
+        }
         // Reset the translation and scale to their original states
         translate(-cameraX / zoom, -cameraY / zoom);
         scale(1 / zoom);
@@ -196,6 +299,7 @@ function draw() {
 function jump(player) {
     const force = { x: 0, y: -0.008 };
     Matter.Body.applyForce(player.body, player.body.position, force);
+    isPlayerInAir = true
 }
 
 

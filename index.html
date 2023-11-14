@@ -2,11 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link  rel="stylesheet" type="text/css" href="style.css">
     <title>Your Game Title</title>
 </head>
 <body>
+    <div id="menu">
+        <img id="header-image" src="/Sprites/menu/logo.png" alt="Your Image Alt Text">
+        <button onclick="startGame('solo')">Solo</button>
+        <button onclick="startGame('local')">Local</button>
+        <button onclick="startGame('multiplayer')">Multiplayer</button>
+    </div>
+
     <script src="librairies/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.16/addons/p5.sound.js"></script>
+    <script src="librairies/p5.collide2d.js"></script>
     <script src="librairies/matter.js"></script>
     <script src="Ground.js"></script>
     <script src="platform.js"></script>

@@ -32,6 +32,7 @@ class Player {
     }
 
 show() {
+
     let pos = this.body.position;
     let angle = this.body.angle;
     let scaledWidth = this.w * this.zoomX;
@@ -72,6 +73,7 @@ show() {
     } else if (this.body.velocity.y > 0.1 && this.body.velocity.x >= 0) {
         // If velocity.y is less than 0 and velocity.x is greater than 0, display the fall sprite (2 frames)
         let fallFrame = this.currentFrame % 2;
+        movementSound.stop();   
         image(
             this.spriteFall,
             this.body.position.x - scaledWidth / 2,
@@ -131,9 +133,26 @@ show() {
             this.frameHeight
         );
         pop(); // Restore the scale
-    } else {
+    }  else {
         // If none of the above conditions are met, use the idle sprite (8 frames)
         let idleFrame = this.currentFrame % 8;
+        if (lookingleft1==true && this.body.label=="player1" ){
+            
+            push();
+            scale(-1, 1); // Flip horizontally
+            image(
+                this.spriteIdle,
+                -(this.body.position.x + 50), // Mirror the X position
+                this.body.position.y - scaledHeight / 2,
+                scaledWidth,
+                scaledHeight,
+                idleFrame   * this.frameWidth, // Use runFrame for animation frame
+                0,
+                this.frameWidth,
+                this.frameHeight
+            );
+            pop();
+        }else{
         image(
             this.spriteIdle,
             this.body.position.x - scaledWidth / 2,
@@ -144,7 +163,7 @@ show() {
             0,
             this.frameWidth,
             this.frameHeight
-        );
+        );}
     }
     
     // Update the animation frame based on the frame rate
@@ -154,4 +173,5 @@ show() {
         this.frameCounter = 0;
     }
 }
+
 }
