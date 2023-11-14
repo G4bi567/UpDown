@@ -1,27 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <link  rel="stylesheet" type="text/css" href="style.css">
-    <title>Your Game Title</title>
-</head>
-<body>
-    <div id="menu">
-        <img id="header-image" src="/Sprites/menu/logo.png" alt="Your Image Alt Text">
-        <button onclick="startGame('solo')">Solo</button>
-        <button onclick="startGame('local')">Local</button>
-        <button onclick="startGame('multiplayer')">Multiplayer</button>
-    </div>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <link  rel="stylesheet" type="text/css" href="style.css">
+            <title>Your Game Title</title>
+        </head>
+        <body>
+            <div id="menu">
+                <img id="header-image" src="/Sprites/menu/logo.png" alt="Your Image Alt Text">
+                <button onclick="startGame('solo')">Solo</button>
+                <button onclick="startGame('local')">Local</button>
+                <button onclick="startGame('multiplayer')">Multiplayer</button>
+            </div>
+            
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+    const socket = io('http://localhost:3000', { transports: ['websocket'], withCredentials: true });
 
-    <script src="librairies/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.16/addons/p5.sound.js"></script>
-    <script src="librairies/p5.collide2d.js"></script>
-    <script src="librairies/matter.js"></script>
-    <script src="Ground.js"></script>
-    <script src="platform.js"></script>
-    <script src="boundary.js"></script>
-    <script src="box.js"></script>
-    <script src="player.js"></script>
-    <script src="sketch.js"></script>
-</body>
-</html>
+
+    socket.on('connect', () => {
+        console.log('Connected to server');
+    });
+
+    // Listen for errors during the connection attempt
+    socket.on('connect_error', (error) => {
+        console.error('Connection failed:', error);
+    });
+
+    // Listen for messages from the server
+    socket.on('message', (data) => {
+        console.log('Message from server:', data);
+    });
+    </script>
+            
+            <script src="librairies/p5.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.16/addons/p5.sound.js"></script>
+            <script src="librairies/p5.collide2d.js"></script>
+            <script src="librairies/matter.js"></script>
+            <script src="Ground.js"></script>
+            <script src="platform.js"></script>
+            <script src="boundary.js"></script>
+            <script src="box.js"></script>
+            <script src="player.js"></script>
+            <script src="sketch.js"></script>
+        </body>
+        </html>

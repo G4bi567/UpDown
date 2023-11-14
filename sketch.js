@@ -1,4 +1,7 @@
-// Add this function in your JavaScript code
+let gameStarted = false;
+
+
+
 function startGame(mode) {
     if (mode === 'solo') {
         spawnPlayer2 = false;
@@ -8,10 +11,14 @@ function startGame(mode) {
         // Add logic for multiplayer if needed
     }
     document.getElementById('menu').style.display = 'none';
+    
+    // Set gameStarted to true to allow player movement
+    gameStarted = true;
+
+
     // Rest of your setup logic
     setup();
 }
-
 
 
 const { Engine, World, Composite, Bodies } = Matter;
@@ -33,7 +40,10 @@ let backgroundMusic
 let isPlayerInAir = false;
 
 let menuVisible = true;
-
+// Add these variables to keep track of the last attack time
+let lastAttackTimePlayer1 = 0;
+let lastAttackTimePlayer2 = 0;
+let attackCooldown = 1000;
 
 
 function setup() {
@@ -100,6 +110,11 @@ function isPlayer1Touching(object) {
     return collision ? collision.collided : false;
 }
 
+function isPlayersTouching() {
+    const collision = Matter.SAT.collides(player1.body, player2.body);
+
+    return collision ? collision.collided : false;
+}
 
 
 window.addEventListener("keydown", (event) => {
@@ -129,7 +144,7 @@ window.addEventListener("keyup", (event) => {
 });
 
 function applyPlayerForces(player) {
-    let playerVelocity = { x: 0, y: player.body.velocity.y };
+    let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y };
     
     if(player == player1){
     if (keys.a) {
@@ -154,6 +169,7 @@ function applyPlayerForces(player) {
             lookingleft2=false
         }
     }
+    
 
     Matter.Body.setVelocity(player.body, playerVelocity);
 }
@@ -169,7 +185,7 @@ function handlePlayerPosition() {
 
 function draw() {
     // Check if spawnPlayer2 is true
-    
+    if (gameStarted){
     if (spawnPlayer2) {
         // Calculate the midpoint between the two players
         
@@ -210,16 +226,26 @@ function draw() {
         if (player2.body.position.y > height * 2 + 100) {
             respawnPlayer(player2);
         }
-
+        
         applyPlayerForces(player1);
         if (spawnPlayer2) {
             applyPlayerForces(player2);
         }
 
+
         for (let i = 0; i < CollisionBlocks.length; i++) {
             const block = CollisionBlocks[i];
             block.show();
 
+        }
+        console.log(abs(player1.body.position.x - player2.body.position.x))
+        if (abs(player1.body.position.x - player2.body.position.x) <= 30) {
+            console.log("attack")
+            // Player 1 attacks Player 2
+            attack(player1, player2, lastAttackTimePlayer1);
+        } else if (abs(player1.body.position.x - player2.body.position.x) <= 30) {
+            // Player 2 attacks Player 1
+            attack(player2, player1, lastAttackTimePlayer2);
         }
         player1.show();
         if (spawnPlayer2) {
@@ -288,6 +314,12 @@ function draw() {
         translate(-cameraX / zoom, -cameraY / zoom);
         scale(1 / zoom);
     }
+}else{
+    // Draw a message or waiting screen indicating that the game is not started
+    background(0);
+
+    fill(255);
+}
 }
 
 
@@ -301,4 +333,22 @@ function jump(player) {
 function respawnPlayer(player) {
     Matter.Body.setPosition(player.body, respawnPosition);
     Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
+}
+function attack(attacker, target, lastAttackTime) {
+    const currentTime = Date.now();
+    if (currentTime - lastAttackTime > attackCooldown) {
+        // Perform attack action here
+        console.log(`${attacker.body.label} attacks ${target.body.label}`);
+        
+        // Set the last attack time to the current time
+        if (attacker.body.label === 'player1') {
+            lastAttackTimePlayer1 = currentTime;
+        } else {
+            lastAttackTimePlayer2 = currentTime;
+        }
+
+        // Eject the target (respawn or any other action)
+        const force = { x: 0.03, y:0.1};
+        Matter.Body.setVelocity(target.body,  force);
+    }
 }
