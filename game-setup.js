@@ -1,26 +1,3 @@
-let gameStarted = false;
-
-
-
-function startGame(mode) {
-    if (mode === 'solo') {
-        spawnPlayer2 = false;
-    } else if (mode === 'local') {
-        spawnPlayer2 = true;
-    } else if (mode === 'multiplayer') {
-        // Add logic for multiplayer if needed
-    }
-    document.getElementById('menu').style.display = 'none';
-    
-    // Set gameStarted to true to allow player movement
-    gameStarted = true;
-
-
-    // Rest of your setup logic
-    setup();
-}
-
-
 const { Engine, World, Composite, Bodies } = Matter;
 let spawnPlayer2 = true;
 let player2;
@@ -45,6 +22,7 @@ let lastAttackTimePlayer1 = 0;
 let lastAttackTimePlayer2 = 0;
 let attackCooldown = 4000;
 let lastKeyPressTimePlayer2 = 0;
+// Other setup-related variables
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -76,7 +54,6 @@ function preload() {
     landingSound = loadSound('Sprites/sound/fall.mp3');
     movementSound = loadSound('Sprites/sound/walk.mp3');
 }
-
 function playWalkSound() {
     const currentTime = Date.now();
     if (currentTime - lastWalkSoundTime > walkSoundDelay) {
@@ -100,99 +77,7 @@ function createCollisionBlocks(data, collisionArray, yOffset, height) {
     });
     Composite.add(world, collisionArray);
 }
-
-
-function isPlayer1Touching(object) {
-
-
-    const collision = Matter.SAT.collides(player1.body, object.body);
-
-    return collision ? collision.collided : false;
-}
-
-function isPlayersTouching() {
-    const collision = Matter.SAT.collides(player1.body, player2.body);
-
-    return collision ? collision.collided : false;
-}
-
-
-window.addEventListener("keydown", (event) => {
-    if (event.key in keys) {
-        keys[event.key] = true;
-    } else if (event.key === 'w' && Math.abs(player1.body.velocity.y) < 0.000000001) {
-
-        jump(player1);
-        jumpSound.play();
-    } else if (event.key === 'ArrowUp' && Math.abs(player2.body.velocity.y) < 0.01 && spawnPlayer2 == true) {
-        jump(player2);
-        jumpSound.play();
-    } else if (event.key === 'g') {
-        // Save the current time when the 'g' key is pressed for Player 2
-        lastKeyPressTimePlayer2 = Date.now();
-    } else if (event.key === 'Escape') {
-        // Toggle the display of the menu
-        const menu = document.getElementById('menu');
-        menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
-    }
-});
-
-window.addEventListener("keyup", (event) => {
-    if (event.key in keys) {
-        keys[event.key] = false;
-        movementSound.stop();
-        walkSoundDelay = 0;
-    }
-});
-
-function applyPlayerForces(player) {
-    let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y };
-    
-    if(player == player1){
-    if (keys.a && keys.d ){
-        playerVelocity.x=   0;
-    }else if (!keys.a && !keys.d ){
-        playerVelocity.x= 0;
-    }
-    else if (keys.a && playerVelocity.x >=-2.5) {
-        playWalkSound()
-        playerVelocity.x=-2.5;
-        lookingleft1=true
-    }
-    else if (keys.d && playerVelocity.x <=2.5) {
-        playWalkSound()
-        playerVelocity.x=2.5;
-        lookingleft1=false
-    }}else{
-        
-        if (keys.ArrowLeft && keys.ArrowRight ){
-            playerVelocity.x=   0;
-        }
-        else if (keys.ArrowLeft) {
-            playWalkSound()
-            playerVelocity.x=-2.5;
-            lookingleft2=true
-        }
-        else if (keys.ArrowRight) {
-            playWalkSound()
-            playerVelocity.x=2.5;
-            lookingleft2=false
-        }
-
-    }
-    
-
-    Matter.Body.setVelocity(player.body, playerVelocity);
-}
-
-
-function handlePlayerPosition() {
-    if (player1.body.position.x < player1.w / 2) {
-        Matter.Body.setPosition(player1.body, { x: player1.w / 2, y: player1.body.position.y });
-    } else if (player1.body.position.x > width / (zoom - 2) - player1.w -50) {
-        Matter.Body.setPosition(player1.body, { x: width / (zoom - 2) - player1.w -50 , y: player1.body.position.y });
-    }
-}
+// Other setup-related functions
 
 function draw() {
     // Check if spawnPlayer2 is true
@@ -237,17 +122,7 @@ function draw() {
         if (player2.body.position.y > height * 2 + 100) {
             respawnPlayer(player2);
         }
-        if (player1.body.velocity.y =! 0 ) {
-            player1.friction=0;
-        }else{
- 
-            player1.friction=1
-
-            
-        }
-        if (player2.body.position.y > height * 2 + 100) {
-            respawnPlayer(player2);
-        }
+        
         applyPlayerForces(player1);
         if (spawnPlayer2) {
             applyPlayerForces(player2);
@@ -321,13 +196,6 @@ function draw() {
    
             }
         }
-        if (abs(player1.body.velocity.y) > 0.1 ) {
-
-            player1.friction=0 ;
-        }else{
-
-            player1.friction=1
-        }
         for (let i = 0; i < platformCollisionBlocks.length; i++) {
             const platform = platformCollisionBlocks[i];
             platform.show();
@@ -351,34 +219,4 @@ function draw() {
 
     fill(255);
 }
-}
-
-
-    function jump(player) {
-        const force = { x: 0, y: -0.008 };
-        Matter.Body.applyForce(player.body, player.body.position, force);
-        isPlayerInAir = true
-    }
-
-
-function respawnPlayer(player) {
-    Matter.Body.setPosition(player.body, respawnPosition);
-    Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
-}
-function attack(attacker, target, lastAttackTime) {
-    const currentTime = Date.now();
-    if (currentTime - lastAttackTime>  attackCooldown) {
-        // Perform attack action here
-        
-        // Set the last attack time to the current time
-        if (attacker.body.label === 'player1') {
-            lastAttackTimePlayer1 = currentTime;
-        } else {
-            lastAttackTimePlayer2 = currentTime;
-        }
-
-        // Eject the target (respawn or any other action)
-        const force = { x: 9, y:-1};
-        Matter.Body.setVelocity(target.body,  force);
-    }
 }
