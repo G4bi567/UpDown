@@ -26,7 +26,7 @@ let spawnPlayer2 = true;
 let player2;
 const respawnPosition = { x: 100, y: 1050 };
 const respawnPositionPlayer2 = { x: respawnPosition.x + 100, y: respawnPosition.y };
-const keys = { d: false, a: false, ArrowLeft: false, ArrowRight: false };
+const keys = { d: false, a: false, ArrowLeft: false, ArrowRight: false, f:false };
 let lookingleft1=false
 let lookingleft2=false
 
@@ -147,7 +147,7 @@ window.addEventListener("keyup", (event) => {
 
 function applyPlayerForces(player) {
     let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y };
-    
+    if(abs(player.body.velocity.x)<=2.5){
     if(player == player1){
     if (keys.a && keys.d ){
         playerVelocity.x=   0;
@@ -165,7 +165,7 @@ function applyPlayerForces(player) {
         lookingleft1=false
     }}else{
         
-        if (keys.ArrowLeft && keys.ArrowRight ){
+        if (keys.ArrowLeft && keys.ArrowRight || !keys.ArrowRight && !keys.ArrowLeft){
             playerVelocity.x=   0;
         }
         else if (keys.ArrowLeft) {
@@ -183,6 +183,7 @@ function applyPlayerForces(player) {
     
 
     Matter.Body.setVelocity(player.body, playerVelocity);
+}
 }
 
 
@@ -237,14 +238,7 @@ function draw() {
         if (player2.body.position.y > height * 2 + 100) {
             respawnPlayer(player2);
         }
-        if (player1.body.velocity.y =! 0 ) {
-            player1.friction=0;
-        }else{
- 
-            player1.friction=1
 
-            
-        }
         if (player2.body.position.y > height * 2 + 100) {
             respawnPlayer(player2);
         }
@@ -257,20 +251,22 @@ function draw() {
         for (let i = 0; i < CollisionBlocks.length; i++) {
             const block = CollisionBlocks[i];
             block.show();
-
+            block.friction=0
+            if (isPlayer1Touching(block)) {
+                if (isPlayerInAir){
+                    isPlayerInAir=false
+                    landingSound.play()
+                }
+                // Player1 is touching this block
+                // Perform actions here
+   
+            }
         }
-        if (abs(player1.body.position.x - player2.body.position.x) <= 30) {
+        if (abs(player1.body.position.x - player2.body.position.x) <= 30 && keys.f) {
             // Player 1 attacks Player 2
             attack(player1, player2, lastAttackTimePlayer1);
-        } else if (abs(player1.body.position.x - player2.body.position.x) <= 30) {
-            // Player 2 attacks Player 1
-            attack(player2, player1, lastAttackTimePlayer2);
         }
 
-        // Check if Player 2 presses the 'g' key and is close to Player 1
-        if (spawnPlayer2 && keyIsDown(71) && abs(player1.body.position.x - player2.body.position.x) <= 30) {
-            attack(player2, player1, lastKeyPressTimePlayer2);
-        }
 
         player1.show();
         if (spawnPlayer2) {
@@ -311,6 +307,7 @@ function draw() {
         for (let i = 0; i < CollisionBlocks.length; i++) {
             const block = CollisionBlocks[i];
             block.show();
+            block.friction=0
             if (isPlayer1Touching(block)) {
                 if (isPlayerInAir){
                     isPlayerInAir=false
@@ -367,6 +364,7 @@ function respawnPlayer(player) {
 }
 function attack(attacker, target, lastAttackTime) {
     const currentTime = Date.now();
+    let force
     if (currentTime - lastAttackTime>  attackCooldown) {
         // Perform attack action here
         
@@ -378,7 +376,12 @@ function attack(attacker, target, lastAttackTime) {
         }
 
         // Eject the target (respawn or any other action)
-        const force = { x: 9, y:-1};
+        console.log(attacker.body.position.x-target.body.position.x)
+        if (attacker.body.position.x-target.body.position.x) {
+            force = { x: 6, y:-4};
+        }else{
+            force = { x: -6, y:-4};
+        }
         Matter.Body.setVelocity(target.body,  force);
     }
 }
