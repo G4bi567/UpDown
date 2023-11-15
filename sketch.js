@@ -377,7 +377,7 @@ function attack(attacker, target, lastAttackTime) {
 
         // Eject the target (respawn or any other action)
         console.log(attacker.body.position.x-target.body.position.x)
-        if (attacker.body.position.x-target.body.position.x) {
+        if (attacker.body.position.x-target.body.position.x<0) {
             force = { x: 6, y:-4};
         }else{
             force = { x: -6, y:-4};

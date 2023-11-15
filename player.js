@@ -8,11 +8,12 @@ class Player {
         this.zoomY = 4; // Zoom factor for the Y dimension
         this.mouvement ="idle"
         let options = {
-            friction: 1 ,
+            friction: 0,
             inertia: Infinity,
             restitution: 0,
             center: true,
-            frictionAir:0.01
+            frictionAir: 0.03
+
         };
 
         this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
