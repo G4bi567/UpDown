@@ -8,7 +8,22 @@ function startGame(mode) {
     } else if (mode === 'local') {
         spawnPlayer2 = true;
     } else if (mode === 'multiplayer') {
-        // Add logic for multiplayer if needed
+        const socket = io('http://localhost:3000', { transports: ['websocket'], withCredentials: true });
+
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        // Listen for errors during the connection attempt
+        socket.on('connect_error', (error) => {
+            console.error('Connection failed:', error);
+        });
+
+        // Listen for messages from the server
+        socket.on('message', (data) => {
+            console.log('Message from server:', data);
+        });
     }
     document.getElementById('menu').style.display = 'none';
     
@@ -59,7 +74,7 @@ function setup() {
         player2.body.label = "player2";
         Composite.add(world, player2);
     }
-    createCollisionBlocks(floorCollision, CollisionBlocks, 16, 32);
+    createCollisionBlocks(floorCollision, CollisionBlocks, 50, 100   );
     createCollisionBlocks(platformCollision, platformCollisionBlocks, 5, 2);
     movementSound.setVolume(0.2);
     landingSound.setVolume(0.2);
@@ -251,7 +266,7 @@ function draw() {
         for (let i = 0; i < CollisionBlocks.length; i++) {
             const block = CollisionBlocks[i];
             block.show();
-            block.friction=0
+            block.friction = 0;
             if (isPlayer1Touching(block)) {
                 if (isPlayerInAir){
                     isPlayerInAir=false
