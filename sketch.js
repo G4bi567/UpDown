@@ -277,7 +277,7 @@ function draw() {
    
             }
         }
-        if (abs(player1.body.position.x - player2.body.position.x) <= 30 && keys.f) {
+        if (abs(player1.body.position.x - player2.body.position.x) <= 30 && abs(player1.body.position.y - player2.body.position.y) <= 30&& keys.f) {
             // Player 1 attacks Player 2
             attack(player1, player2, lastAttackTimePlayer1);
         }
