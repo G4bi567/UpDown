@@ -23,6 +23,7 @@ class Player {
         this.spriteRun = loadImage('./Sprites/character/Run.png');
         this.spriteJump = loadImage('./Sprites/character/Jump.png');
         this.spriteFall = loadImage('./Sprites/character/Fall.png');
+        this.spriteHit = loadImage('./Sprites/character/Take Hit.png');
         this.frameWidth = 200;
         this.frameHeight = 200;
         this.frames = 8;
@@ -41,7 +42,22 @@ show() {
     let scaledHeight = this.h * this.zoomY;
     
     // Check the player's velocit
-    if (this.body.velocity.y < -0.1 && this.body.velocity.x >= 0) {
+    if (player1hit) {
+        let jumpFrame = this.currentFrame % 4;
+        // Display hit sprite for Player 1
+        image(
+            this.spriteHit,
+            this.body.position.x - scaledWidth / 2,
+            this.body.position.y - scaledHeight / 2,
+            scaledWidth,
+            scaledHeight,
+            jumpFrame * this.frameWidth, // Use jumpFrame for animation frame
+            0,
+            this.frameWidth,
+            this.frameHeight
+        );
+    }
+    else if (this.body.velocity.y < -0.1 && this.body.velocity.x >= 0) {
         // If velocity.y is greater than 0 and velocity.x is greater than 0, display the jump sprite (2 frames)
         let jumpFrame = this.currentFrame % 2;
         image(
