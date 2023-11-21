@@ -24,6 +24,7 @@ class Player {
         this.spriteJump = loadImage('./Sprites/character/Jump.png');
         this.spriteFall = loadImage('./Sprites/character/Fall.png');
         this.spriteHit = loadImage('./Sprites/character/Take Hit.png');
+        this.spriteAttack = loadImage('./Sprites/character/Attack1.png');
         this.frameWidth = 200;
         this.frameHeight = 200;
         this.frames = 8;
@@ -42,7 +43,25 @@ show() {
     let scaledHeight = this.h * this.zoomY;
     
     // Check the player's velocit
-    if (player1hit) {
+    if(player1hit && this.body.label=="player1" && lookingleft1 || player2hit && this.body.label=="player2" && lookingleft2){
+        let jumpFrame = this.currentFrame % 4;
+        push();
+        scale(-1, 1);
+        image(
+            this.spriteHit,
+            -(this.body.position.x + 50), // Mirror the X position
+            this.body.position.y - scaledHeight / 2,
+            scaledWidth,
+            scaledHeight,
+            jumpFrame * this.frameWidth, // Use jumpFrame for animation frame
+            0,
+            this.frameWidth,
+            this.frameHeight
+        );
+        pop();
+    }
+    else if(player1hit && this.body.label=="player1" || player2hit && this.body.label=="player2") {
+
         let jumpFrame = this.currentFrame % 4;
         // Display hit sprite for Player 1
         image(
@@ -88,22 +107,7 @@ show() {
             this.frameHeight
         );
         pop(); // Restore the scale
-    } else if (this.body.velocity.y > 0.1 && this.body.velocity.x >= 0) {
-        // If velocity.y is less than 0 and velocity.x is greater than 0, display the fall sprite (2 frames)
-        let fallFrame = this.currentFrame % 2;
-        movementSound.stop();   
-        image(
-            this.spriteFall,
-            this.body.position.x - scaledWidth / 2,
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            fallFrame * this.frameWidth, // Use fallFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-    } else if (this.body.velocity.y > 0.1 && this.body.velocity.x < 0) {
+    } else if (this.body.velocity.y > 0.1 && this.body.velocity.x < 0 || lookingleft1 && this.body.velocity.x == 0 && this.body.velocity.y > 0.1 ||lookingleft2 && this.body.velocity.x == 0 && this.body.velocity.y > 0.1) {
         // If velocity.y is less than 0 and velocity.x is less than 0, flip the fall sprite horizontally
         let fallFrame = this.currentFrame % 2;
         push();
@@ -120,7 +124,22 @@ show() {
             this.frameHeight
         );
         pop(); // Restore the scale
-    } else if (this.body.velocity.y === 0 && this.body.velocity.x > 0) {
+    }else if (this.body.velocity.y > 0.1 && this.body.velocity.x >= 0) {
+        // If velocity.y is less than 0 and velocity.x is greater than 0, display the fall sprite (2 frames)
+        let fallFrame = this.currentFrame % 2;
+        movementSound.stop();   
+        image(
+            this.spriteFall,
+            this.body.position.x - scaledWidth / 2,
+            this.body.position.y - scaledHeight / 2,
+            scaledWidth,
+            scaledHeight,
+            fallFrame * this.frameWidth, // Use fallFrame for animation frame
+            0,
+            this.frameWidth,
+            this.frameHeight
+        );
+    }  else if (this.body.velocity.y === 0 && this.body.velocity.x > 0) {
         // If velocity.y is 0 and velocity.x is greater than 0, display the running sprite (8 frames)
         let runFrame = this.currentFrame % 8;
         image(
@@ -154,7 +173,7 @@ show() {
     }  else {
         // If none of the above conditions are met, use the idle sprite (8 frames)
         let idleFrame = this.currentFrame % 8;
-        if (lookingleft1==true && this.body.label=="player1" ){
+        if (lookingleft1==true && this.body.label=="player1" || lookingleft2==true && this.body.label=="player2" ){
             
             push();
             scale(-1, 1); // Flip horizontally

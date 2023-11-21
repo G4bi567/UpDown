@@ -31,7 +31,6 @@ function startGame(mode) {
     gameStarted = true;
 
 
-    // Rest of your setup logic
     setup();
 }
 
@@ -67,11 +66,13 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     engine = Engine.create();
     world = engine.world;
-    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 24, "player1");
+    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
+    player1.body.label="player1"
     Composite.add(world, player1);
 
     if (spawnPlayer2) {
         player2 = new Player(respawnPositionPlayer2.x, respawnPositionPlayer2.y, 16, 24, "player2");
+        player2.body.label="player2"
         Composite.add(world, player2);
     }
 
@@ -164,8 +165,9 @@ function handleKeyUp(event) {
 function applyPlayerForces(player) {
     let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y };
 
-    if (!player1hit) {
-        if (player == player1) {
+    
+    if (player == player1) {
+        if (!player1hit) {
             if (keys.a && keys.d) {
                 playerVelocity.x = 0;
             } else if (!keys.a && !keys.d) {
@@ -179,8 +181,11 @@ function applyPlayerForces(player) {
                 playerVelocity.x = 2.5;
                 lookingleft1 = false;
             }
-        } else {
+        }
+    } else {
+        if (!player2hit) {
             if (keys.ArrowLeft && keys.ArrowRight || !keys.ArrowRight && !keys.ArrowLeft) {
+                
                 playerVelocity.x = 0;
             } else if (keys.ArrowLeft) {
                 playWalkSound();
@@ -193,7 +198,6 @@ function applyPlayerForces(player) {
             }
         }
     }
-
     Matter.Body.setVelocity(player.body, playerVelocity);
 }
 
@@ -264,6 +268,7 @@ function drawMultiplayer() {
 
     if (abs(player1.body.position.x - player2.body.position.x) <= 30 && abs(player1.body.position.y - player2.body.position.y) <= 30 && keys.f) {
         attack(player1, player2, lastAttackTimePlayer1);
+
     }
 
     player1.show();
@@ -355,9 +360,22 @@ function attack(attacker, target, lastAttackTime) {
         } else {
             lastAttackTimePlayer2 = currentTime;
         }
-        player1hit = true;
+        console.log(target.body.label)
+        if (target.body.label=="player1"){
+            player1hit = true;
+            player2attack =true;
+        }else{
+            player2hit = true;
+            player1attack =true;
+        }
         setTimeout(() => {
-            player1hit = false;
+            if (target.label=="player1"){
+                player1hit = false;
+                player2attack =false;
+            }else{
+                player2hit = false;
+                player1attack =false;
+            }
         }, 400);
 
         if (attacker.body.position.x - target.body.position.x < 0) {
