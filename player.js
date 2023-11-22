@@ -6,7 +6,6 @@ class Player {
         this.h = h;
         this.zoomX = 6; // Zoom factor for the X dimension
         this.zoomY = 4; // Zoom factor for the Y dimension
-        this.mouvement ="idle"
         let options = {
             friction: 0,
             inertia: Infinity,
