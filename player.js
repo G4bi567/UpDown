@@ -40,7 +40,6 @@ show() {
     let angle = this.body.angle;
     let scaledWidth = this.w * this.zoomX;
     let scaledHeight = this.h * this.zoomY;
-    
     // Check the player's velocit
     if(player1hit && this.body.label=="player1" && lookingleft1 || player2hit && this.body.label=="player2" && lookingleft2){
         let jumpFrame = this.currentFrame % 4;
@@ -174,8 +173,7 @@ show() {
         let idleFrame = this.currentFrame % 8;
         if (lookingleft1==true && this.body.label=="player1" || lookingleft2==true && this.body.label=="player2" ){
             
-            push();
-            scale(-1, 1); // Flip horizontally
+             // Flip horizontally
             image(
                 this.spriteIdle,
                 -(this.body.position.x + 50), // Mirror the X position
@@ -210,4 +208,26 @@ show() {
     }
 }
 
-}//helo
+}
+
+function imageselected(position){
+    let idleFrame = this.currentFrame % 8;
+    flipimage()
+    image(
+        this.spriteIdle,
+        this.body.position.x - scaledWidth / 2,
+        this.body.position.y - scaledHeight / 2,
+        scaledWidth,
+        scaledHeight,
+        idleFrame * this.frameWidth, // Use idleFrame for animation frame
+        0,
+        this.frameWidth,
+        this.frameHeight
+    )
+    pop()
+}
+function flipimage(){
+    push();
+    scale(-1, 1);
+
+}

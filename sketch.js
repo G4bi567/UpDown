@@ -139,6 +139,7 @@ window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
 
 function handleKeyDown(event) {
+
     if (event.key in keys) {
         keys[event.key] = true;
     } else if (event.key === 'w' && Math.abs(player1.body.velocity.y) < 0.000000001) {
@@ -149,7 +150,8 @@ function handleKeyDown(event) {
         jumpSound.play();
     } else if (event.key === 'g') {
         lastKeyPressTimePlayer2 = Date.now();
-    } else if (event.key === 'Escape') {
+    } else if (event.key === 'Escape'|| event.key === "$") {
+
         toggleMenuDisplay();
     }
 }
@@ -339,6 +341,13 @@ function drawWaitingScreen() {
     // Draw a message or waiting screen indicating that the game is not started
 }
 
+function toggleMenuDisplay(){
+    document.getElementById('menu').style.display = 'block';
+    
+    // Set gameStarted to true to allow player movement
+    gameStarted = true;
+}
+
 function jump(player) {
     const force = { x: 0, y: -0.008 };
     Matter.Body.applyForce(player.body, player.body.position, force);
@@ -360,7 +369,7 @@ function attack(attacker, target, lastAttackTime) {
         } else {
             lastAttackTimePlayer2 = currentTime;
         }
-        console.log(target.body.label)
+
         if (target.body.label=="player1"){
             player1hit = true;
             player2attack =true;
