@@ -2,7 +2,7 @@ let gameStarted = false;
 const GAME_WORLD_WIDTH = 2000;
 const GAME_WORLD_HEIGHT = 1000;
 let mode_name
-
+//hello
 function startGame(mode) {
     if (mode === 'solo') {
         spawnPlayer2 = false;
