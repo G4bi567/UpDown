@@ -1,39 +1,59 @@
 let gameStarted = false;
-
-
+const GAME_WORLD_WIDTH = 2000;
+const GAME_WORLD_HEIGHT = 1000;
+let mode_name
 
 function startGame(mode) {
     if (mode === 'solo') {
         spawnPlayer2 = false;
+        gameStarted = true;
+        setup();
     } else if (mode === 'local') {
         spawnPlayer2 = true;
+        gameStarted = true;
+        setup();
     } else if (mode === 'multiplayer') {
-        const socket = io('http://localhost:3000', { transports: ['websocket'], withCredentials: true });
+        mode_name = mode;
+        console.log("change")
+        document.getElementById('multiplayerLobby').style.display = 'block';
 
-
-        socket.on('connect', () => {
-            console.log('Connected to server');
-        });
-
-        // Listen for errors during the connection attempt
-        socket.on('connect_error', (error) => {
-            console.error('Connection failed:', error);
-        });
-
-        // Listen for messages from the server
-        socket.on('message', (data) => {
-            console.log('Message from server:', data);
-        });
     }
     document.getElementById('menu').style.display = 'none';
+}
+
+function joinOrCreateLobby() {
+    const lobbyId = document.getElementById('lobbyId').value.trim();
+    socket = io('http://localhost:3000', { transports: ['websocket'], withCredentials: true });
+
+    socket.on('connect', () => {
+        console.log('Connected to server');
+        if (lobbyId) {
+            socket.emit('joinLobby', lobbyId);
+        } else {
+            const newLobbyId = Math.random().toString(36).substring(2, 9);
+            socket.emit('createLobby', newLobbyId);
+            document.getElementById('lobbyId').value = newLobbyId;
+        }
+    });
+
+    socket.on('lobbyCreated', (data) => {
+        console.log('Lobby created:', data);
+        startMultiplayerGame();
+    });
+
+    socket.on('joinedLobby', (data) => {
+        console.log('Joined Lobby:', data);
+        startMultiplayerGame();
+    });
     
-    // Set gameStarted to true to allow player movement
+}
+
+function startMultiplayerGame() {
+    spawnPlayer2 = true;
     gameStarted = true;
-
-
     setup();
 }
-//hello
+
 
 let spawnPlayer2 = true;
 
@@ -55,7 +75,7 @@ let isPlayerInAir = false;
 let menuVisible = true;
 let lastAttackTimePlayer1 = 0;
 let lastAttackTimePlayer2 = 0;
-let attackCooldown = 4000;
+let attackCooldown = 1500;
 let lastKeyPressTimePlayer2 = 0;
 let player1hit = false;
 let player1attack = false;
@@ -86,6 +106,8 @@ function preload() {
     backgroundImage = loadImage('Sprites/Background/new.png');
     backgroundMusic = loadSound('Sprites/sound/background.mp3');
     jumpSound = loadSound('Sprites/sound/jump.mp3');
+    hitSound = loadSound('Sprites/sound/hit.mp3');
+    attackSound = loadSound('Sprites/sound/attack1.mp3');
     landingSound = loadSound('Sprites/sound/fall.mp3');
     movementSound = loadSound('Sprites/sound/walk.mp3');
 }
@@ -96,7 +118,6 @@ function setupSounds() {
     landingSound.setVolume(0.2);
     jumpSound.setVolume(0.3);
     backgroundMusic.setVolume(0.08);
-    backgroundMusic.play();
 }
 
 
@@ -139,8 +160,9 @@ window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
 
 function handleKeyDown(event) {
-
+    
     if (event.key in keys) {
+
         keys[event.key] = true;
     } else if (event.key === 'w' && Math.abs(player1.body.velocity.y) < 0.000000001) {
         jump(player1);
@@ -148,10 +170,12 @@ function handleKeyDown(event) {
     } else if (event.key === 'ArrowUp' && Math.abs(player2.body.velocity.y) < 0.01 && spawnPlayer2) {
         jump(player2);
         jumpSound.play();
-    } else if (event.key === 'g') {
-        lastKeyPressTimePlayer2 = Date.now();
-    } else if (event.key === 'Escape'|| event.key === "$") {
-
+    }else if (event.key === 'l') {
+        attack(player2,player1,lastAttackTimePlayer2)
+    }else if (event.key === 'g') {
+        attack(player1,player2,lastAttackTimePlayer1)
+    } else if (event.key === 'Escape') {
+        console.log(event.key)
         toggleMenuDisplay();
     }
 }
@@ -171,13 +195,16 @@ function applyPlayerForces(player) {
     if (player == player1) {
         if (!player1hit) {
             if (keys.a && keys.d) {
+
                 playerVelocity.x = 0;
             } else if (!keys.a && !keys.d) {
                 playerVelocity.x = 0;
             } else if (keys.a && playerVelocity.x >= -2.5) {
                 playWalkSound();
+
                 playerVelocity.x = -2.5;
                 lookingleft1 = true;
+
             } else if (keys.d && playerVelocity.x <= 2.5) {
                 playWalkSound();
                 playerVelocity.x = 2.5;
@@ -218,7 +245,11 @@ function handlePlayerPosition() {
 
 function draw() {
     if (gameStarted) {
-        if (spawnPlayer2) {
+        if (spawnPlayer2){
+            drawMultiplayer();
+        }else if (mode_name === 'multiplayer') {
+            
+            updateGame()
             drawMultiplayer();
         } else {
             drawSinglePlayer();
@@ -249,10 +280,16 @@ function drawMultiplayer() {
     if (player2.body.position.y > height * 2 + 100) {
         respawnPlayer(player2);
     }
-
     applyPlayerForces(player1);
-    if (spawnPlayer2) {
+
+    
+    drawAttackGauge(player1);
+    player1.show();
+
+    if (spawnPlayer2 || mode_name === 'multiplayer') {
         applyPlayerForces(player2);
+        drawAttackGauge(player2);
+        player2.show(); // Ensure player2 is also rendered
     }
 
     for (let i = 0; i < CollisionBlocks.length; i++) {
@@ -266,11 +303,6 @@ function drawMultiplayer() {
                 landingSound.play();
             }
         }
-    }
-
-    if (abs(player1.body.position.x - player2.body.position.x) <= 30 && abs(player1.body.position.y - player2.body.position.y) <= 30 && keys.f) {
-        attack(player1, player2, lastAttackTimePlayer1);
-
     }
 
     player1.show();
@@ -298,7 +330,8 @@ function drawSinglePlayer() {
     }
 
     applyPlayerForces(player1);
-
+    drawAttackGauge(player1);
+    
     player1.show();
     for (let i = 0; i < CollisionBlocks.length; i++) {
         const block = CollisionBlocks[i];
@@ -341,13 +374,6 @@ function drawWaitingScreen() {
     // Draw a message or waiting screen indicating that the game is not started
 }
 
-function toggleMenuDisplay(){
-    document.getElementById('menu').style.display = 'block';
-    
-    // Set gameStarted to true to allow player movement
-    gameStarted = true;
-}
-
 function jump(player) {
     const force = { x: 0, y: -0.008 };
     Matter.Body.applyForce(player.body, player.body.position, force);
@@ -358,41 +384,103 @@ function respawnPlayer(player) {
     Matter.Body.setPosition(player.body, respawnPosition);
     Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
 }
-
 function attack(attacker, target, lastAttackTime) {
-    const currentTime = Date.now();
-    let force;
+    // Check if players are close enough to interact
+    const playersCloseEnough = abs(player1.body.position.x - player2.body.position.x) <= 30 &&
+                               abs(player1.body.position.y - player2.body.position.y) <= 30;
+ 
+    if (playersCloseEnough) {
+        
+        const currentTime = Date.now();
 
-    if (currentTime - lastAttackTime > attackCooldown) {
-        if (attacker.body.label === 'player1') {
-            lastAttackTimePlayer1 = currentTime;
-        } else {
-            lastAttackTimePlayer2 = currentTime;
-        }
-
-        if (target.body.label=="player1"){
-            player1hit = true;
-            player2attack =true;
-        }else{
-            player2hit = true;
-            player1attack =true;
-        }
-        setTimeout(() => {
-            if (target.label=="player1"){
-                player1hit = false;
-                player2attack =false;
-            }else{
-                player2hit = false;
-                player1attack =false;
+        // Check if the attacker can attack based on cooldown
+        if (currentTime - lastAttackTime > attackCooldown) {
+            attacker.attackGaugeVisible = true; // Show the gauge
+            attacker.lastAttackTime = currentTime; // Record the attack time
+            if (attacker.body.label === 'player1') {
+                lastAttackTimePlayer1 = currentTime;
+            } else {
+                lastAttackTimePlayer2 = currentTime;
             }
-        }, 400);
 
-        if (attacker.body.position.x - target.body.position.x < 0) {
-            force = { x: 6, y: -4 };
-        } else {
-            force = { x: -6, y: -4 };
+            console.log(`${attacker.body.label} attacked ${target.body.label}`);
+            attackSound.play()
+            hitSound.play()
+            setAttackRoles(attacker, target);
+
+
+            applyAttackForce(attacker, target);
         }
-
-        Matter.Body.setVelocity(target.body, force);
     }
 }
+
+function setAttackRoles(attacker, target) {
+    // Determine which player is hit and which player is attacking
+    if (target.body.label === 'player1') {
+        player1hit = true;
+        player2attack = true;
+    } else {
+        player2hit = true;
+        player1attack = true;
+    }
+
+    // Reset the roles after a delay
+    setTimeout(() => {
+        if (target.body.label === 'player1') {
+            player1hit = false;
+            player2attack = false;
+        } else {
+            player2hit = false;
+            player1attack = false;
+        }
+    }, 600);
+}
+
+function applyAttackForce(attacker, target) {
+    let force;
+
+    // Determine the direction of the force based on the attacker's position
+    if (attacker.body.position.x - target.body.position.x < 0) {
+        force = { x: 4, y: -4 };
+    } else {
+        force = { x: -4, y: -4 };
+    }
+
+    // Apply the force to the target
+    Matter.Body.setVelocity(target.body, force);
+}
+function updateGame() {
+    if (gameStarted && mode_name === 'multiplayer') {
+        if (player1) {
+            console.log("server")
+            console.log('Sending position:', player1.body.position); // Log for debugging
+        }
+    }
+}
+
+function toggleMenuDisplay() {
+    if (document.getElementById('menu').style.display == 'none'){
+        document.getElementById('menu').style.display = 'block';}
+    else{
+        document.getElementById('menu').style.display = 'none';
+    }
+    
+}
+function drawAttackGauge(player) {
+    if (player.attackGaugeVisible) {
+        const currentTime = Date.now();
+        const timeElapsed = currentTime - player.lastAttackTime;
+        const gaugeWidth = Math.max(0, player.attackGaugeWidth - (player.attackGaugeWidth * timeElapsed / attackCooldown));
+
+        push();
+        fill(255,255, 255); // Red color for the gauge
+        noStroke();
+        rect(player.body.position.x - player.attackGaugeWidth / 2, player.body.position.y - 30, gaugeWidth, player.attackGaugeHeight);
+        pop();
+
+        if (timeElapsed >= attackCooldown) {
+            player.attackGaugeVisible = false; // Hide the gauge after cooldown
+        }
+    }
+}
+

@@ -1,233 +1,192 @@
 class Player {
     constructor(x, y, w, h) {
+        this.setPosition(x, y);
+        this.setSize(w, h);
+        this.setPhysicsOptions();
+        this.loadSprites();
+        this.initializeAnimationProperties();
+        this.setGaugeSettings()
+        this.previousAnimationState = null;
+    }
+
+    setPosition(x, y) {
         this.x = x;
         this.y = y;
+    }
+
+    setSize(w, h) {
         this.w = w;
         this.h = h;
-        this.zoomX = 6; // Zoom factor for the X dimension
-        this.zoomY = 4; // Zoom factor for the Y dimension
+        this.zoomX = 6;
+        this.zoomY = 4;
+    }
+
+    setPhysicsOptions() {
         let options = {
             friction: 0,
             inertia: Infinity,
             restitution: 0,
             center: true,
             frictionAir: 0.03
-
         };
-
         this.body = Bodies.rectangle(this.x, this.y, this.w, this.h, options);
         Composite.add(world, this.body);
+    }
 
+    loadSprites() {
         this.spriteIdle = loadImage('./Sprites/character/Idle.png');
         this.spriteRun = loadImage('./Sprites/character/Run.png');
         this.spriteJump = loadImage('./Sprites/character/Jump.png');
         this.spriteFall = loadImage('./Sprites/character/Fall.png');
         this.spriteHit = loadImage('./Sprites/character/Take Hit.png');
         this.spriteAttack = loadImage('./Sprites/character/Attack1.png');
+    }
+
+    initializeAnimationProperties() {
         this.frameWidth = 200;
         this.frameHeight = 200;
         this.frames = 8;
         this.currentFrame = 0;
-
-        this.frameRate = 8; // Set the frame rate (e.g., 10 frames per second)
+        this.frameRate = 8;
         this.frameCounter = 0;
-         // Set the frame rate for the entire sketch
+        this.isCurrentlyAttacking = false;
     }
 
-show() {
+    setGaugeSettings(){
+        this.attackGaugeWidth = 30; // Initial full width of the gauge
+        this.attackGaugeHeight = 2; // Height of the gauge
+        this.attackGaugeVisible = false; // Initially not visible
+        this.lastAttackTime = 0; // Timestamp of the last attack
 
-    let pos = this.body.position;
-    let angle = this.body.angle;
-    let scaledWidth = this.w * this.zoomX;
-    let scaledHeight = this.h * this.zoomY;
-    // Check the player's velocit
-    if(player1hit && this.body.label=="player1" && lookingleft1 || player2hit && this.body.label=="player2" && lookingleft2){
-        let jumpFrame = this.currentFrame % 4;
+    }
+    show() {
+        let currentAnimationState = this.determineAnimationState();
+        if (this.previousAnimationState !== currentAnimationState) {
+            this.resetAnimation();
+        }
+        this.previousAnimationState = currentAnimationState;
+
+        let scaledWidth = this.w * this.zoomX;
+        let scaledHeight = this.h * this.zoomY;
+
+        if (this.isHit()) {
+            this.displaySprite(this.spriteHit, scaledWidth, scaledHeight);
+        }else if (this.isAttacking() && !this.isCurrentlyAttacking) {
+            this.attackResetAnimation();
+            this.isCurrentlyAttacking = true;
+        } else if (this.isAttacking() && this.isCurrentlyAttacking) {
+            this.displaySprite(this.spriteAttack, scaledWidth, scaledHeight);
+             // Reset the animation if the attack is finished
+        }else if (!this.isAttacking() && this.isCurrentlyAttacking) {
+            this.isCurrentlyAttacking = false;
+        } 
+        else if (this.isJumping()) {
+            this.displaySprite(this.spriteJump, scaledWidth, scaledHeight);
+        } else if (this.isFalling()) {
+            this.displaySprite(this.spriteFall, scaledWidth, scaledHeight);
+        } else if (this.isRunning()) {
+            this.displaySprite(this.spriteRun, scaledWidth, scaledHeight);
+        } else {
+            this.displaySprite(this.spriteIdle, scaledWidth, scaledHeight);
+        }
+
+        this.updateAnimationFrame();
+    }
+
+    displaySprite(sprite, scaledWidth, scaledHeight) {
+        let frameIndex;
+
+        if (sprite === this.spriteJump || sprite === this.spriteFall) {
+            // Jump and fall animations use 2 frames
+            frameIndex = this.currentFrame % 2;
+        } else if (sprite === this.spriteHit) {
+            // Hit animation uses 4 frames
+            frameIndex = this.currentFrame % 4;
+        } else if (sprite === this.spriteAttack) {
+            // Attack animation uses 6 frames
+            frameIndex = this.currentFrame % 6;
+        }else {
+            // Other animations use the full frame set (8 frames)
+            frameIndex = this.currentFrame % this.frames;
+        }
+        let flip = this.shouldFlipSprite();
+
         push();
-        scale(-1, 1);
-        image(
-            this.spriteHit,
-            -(this.body.position.x + 50), // Mirror the X position
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            jumpFrame * this.frameWidth, // Use jumpFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
+        if (flip) {
+            scale(-1, 1);
+            image(sprite, -(this.body.position.x + 50), this.body.position.y - scaledHeight / 2,
+                  scaledWidth, scaledHeight, frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight);
+        } else {
+            image(sprite, this.body.position.x - scaledWidth / 2, this.body.position.y - scaledHeight / 2,
+                  scaledWidth, scaledHeight, frameIndex * this.frameWidth, 0, this.frameWidth, this.frameHeight);
+        }
         pop();
     }
-    else if(player1hit && this.body.label=="player1" || player2hit && this.body.label=="player2") {
 
-        let jumpFrame = this.currentFrame % 4;
-        // Display hit sprite for Player 1
-        image(
-            this.spriteHit,
-            this.body.position.x - scaledWidth / 2,
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            jumpFrame * this.frameWidth, // Use jumpFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
+    shouldFlipSprite() {
+        return (this.body.label === "player1" && lookingleft1) || 
+               (this.body.label === "player2" && lookingleft2);
     }
-    else if (this.body.velocity.y < -0.1 && this.body.velocity.x >= 0) {
-        // If velocity.y is greater than 0 and velocity.x is greater than 0, display the jump sprite (2 frames)
-        let jumpFrame = this.currentFrame % 2;
-        image(
-            this.spriteJump,
-            this.body.position.x - scaledWidth / 2,
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            jumpFrame * this.frameWidth, // Use jumpFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-    } else if (this.body.velocity.y < -0.1 && this.body.velocity.x < 0) {
-        // If velocity.y is greater than 0 and velocity.x is less than 0 (moving left), flip the jump sprite horizontally
-        let jumpFrame = this.currentFrame % 2;
-        push();
-        scale(-1, 1); // Flip horizontally
-        image(
-            this.spriteJump,
-            -(this.body.position.x + 50), // Mirror the X position
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            jumpFrame * this.frameWidth, // Use jumpFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-        pop(); // Restore the scale
-    } else if (this.body.velocity.y > 0.1 && this.body.velocity.x < 0 || lookingleft1 && this.body.velocity.x == 0 && this.body.velocity.y > 0.1 ||lookingleft2 && this.body.velocity.x == 0 && this.body.velocity.y > 0.1) {
-        // If velocity.y is less than 0 and velocity.x is less than 0, flip the fall sprite horizontally
-        let fallFrame = this.currentFrame % 2;
-        push();
-        scale(-1, 1); // Flip horizontally
-        image(
-            this.spriteFall,
-            -(this.body.position.x + 50), // Mirror the X position
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            fallFrame * this.frameWidth, // Use fallFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-        pop(); // Restore the scale
-    }else if (this.body.velocity.y > 0.1 && this.body.velocity.x >= 0) {
-        // If velocity.y is less than 0 and velocity.x is greater than 0, display the fall sprite (2 frames)
-        let fallFrame = this.currentFrame % 2;
-        movementSound.stop();   
-        image(
-            this.spriteFall,
-            this.body.position.x - scaledWidth / 2,
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            fallFrame * this.frameWidth, // Use fallFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-    }  else if (this.body.velocity.y === 0 && this.body.velocity.x > 0) {
-        // If velocity.y is 0 and velocity.x is greater than 0, display the running sprite (8 frames)
-        let runFrame = this.currentFrame % 8;
-        image(
-            this.spriteRun,
-            this.body.position.x - scaledWidth / 2,
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            runFrame * this.frameWidth, // Use runFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-    } else if (this.body.velocity.y === 0 && this.body.velocity.x < 0) {
-        // If velocity.y is 0 and velocity.x is less than 0 (moving left), flip the running sprite horizontally
-        let runFrame = this.currentFrame % 8;
-        push();
-        scale(-1, 1); // Flip horizontally
-        image(
-            this.spriteRun,
-            -(this.body.position.x + 50), // Mirror the X position
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            runFrame * this.frameWidth, // Use runFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );
-        pop(); // Restore the scale
-    }  else {
-        // If none of the above conditions are met, use the idle sprite (8 frames)
-        let idleFrame = this.currentFrame % 8;
-        if (lookingleft1==true && this.body.label=="player1" || lookingleft2==true && this.body.label=="player2" ){
-            
-             // Flip horizontally
-            image(
-                this.spriteIdle,
-                -(this.body.position.x + 50), // Mirror the X position
-                this.body.position.y - scaledHeight / 2,
-                scaledWidth,
-                scaledHeight,
-                idleFrame   * this.frameWidth, // Use runFrame for animation frame
-                0,
-                this.frameWidth,
-                this.frameHeight
-            );
-            pop();
-        }else{
-        image(
-            this.spriteIdle,
-            this.body.position.x - scaledWidth / 2,
-            this.body.position.y - scaledHeight / 2,
-            scaledWidth,
-            scaledHeight,
-            idleFrame * this.frameWidth, // Use idleFrame for animation frame
-            0,
-            this.frameWidth,
-            this.frameHeight
-        );}
-    }
-    
-    // Update the animation frame based on the frame rate
-    this.frameCounter++;
-    if (this.frameCounter >= this.frameRate) {
-        this.currentFrame = (this.currentFrame + 1) % 8; // Update the frame based on 8 frames
+
+    resetAnimation() {
+        this.currentFrame = 0;
         this.frameCounter = 0;
     }
-}
+    attackResetAnimation() {
+        this.currentFrame = 3;
+        this.frameCounter = 0;
+    }
 
-}
+    updateAnimationFrame() {
+        this.frameCounter++;
+        if (this.isCurrentlyAttacking && this.currentFrame >= 5) {
+            // If the player is attacking and has reached the 6th frame
+            return; // Do not update the frame further for this attack
+        }
+        
+        if (this.frameCounter >= this.frameRate) {
+           
+            this.currentFrame = (this.currentFrame + 1) % this.frames;
+            this.frameCounter = 0;
+        }
+    }
 
-function imageselected(position){
-    let idleFrame = this.currentFrame % 8;
-    flipimage()
-    image(
-        this.spriteIdle,
-        this.body.position.x - scaledWidth / 2,
-        this.body.position.y - scaledHeight / 2,
-        scaledWidth,
-        scaledHeight,
-        idleFrame * this.frameWidth, // Use idleFrame for animation frame
-        0,
-        this.frameWidth,
-        this.frameHeight
-    )
-    pop()
-}
-function flipimage(){
-    push();
-    scale(-1, 1);
+    determineAnimationState() {
+        // Logic to determine the current animation state
+        if (this.isHit()) {
+            return 'hit';
+        } else if (this.isAttacking()) {
+            return 'attacking';
+        } else if (this.isJumping()) {
+            return 'jumping';
+        } else if (this.isFalling()) {
+            return 'falling';
+        } else if (this.isRunning()) {
+            return 'running';
+        } else {
+            return 'idle';
+        }
+    }
+    isHit() {
+        return (this.body.label === "player1" && player1hit) || 
+               (this.body.label === "player2" && player2hit);
+    }
 
+    isJumping() {
+        return this.body.velocity.y < -0.1;
+    }
+
+    isFalling() {
+        return this.body.velocity.y > 0.1;
+    }
+
+    isRunning() {
+        return this.body.velocity.y === 0 && Math.abs(this.body.velocity.x) > 0;
+    }
+
+    isAttacking() {
+        // Assuming player1attack and player2attack are global variables tracking attack state
+        return (this.body.label === "player1" && player1attack) || 
+               (this.body.label === "player2" && player2attack);
+    }
 }
