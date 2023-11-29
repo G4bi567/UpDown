@@ -375,7 +375,7 @@ function drawWaitingScreen() {
 }
 
 function jump(player) {
-    const force = { x: 0, y: -0.008 };
+    const force = { x: 0, y: -0.01 };
     Matter.Body.applyForce(player.body, player.body.position, force);
     isPlayerInAir = true;
 }
