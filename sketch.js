@@ -137,7 +137,7 @@ function createCollisionBlocks(data, collisionArray, yOffset, height) {
     }
     collision2D.forEach((row, y) => {
         row.forEach((symbol, x) => {
-            if (symbol == 3193) {
+            if (symbol != 0) {
                 collisionArray.push(new Boundary((x * 16) + 7, (y * 16) + yOffset, 16, height));
             }
         });
