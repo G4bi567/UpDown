@@ -1,6 +1,10 @@
 {
   "name": "updown",
   "version": "1.0.0",
+<<<<<<< HEAD
+=======
+  "description": "A game of a ninja that has to climb a three. Then he has to go down.",
+>>>>>>> 5d92ecd6562d7312bfa28642ac03745c96f07638
   "main": "Ground.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,7 +15,7 @@
     "url": "git+https://github.com/G4bi567/UpDown.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Gabriel Teixeira Dias",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/G4bi567/UpDown/issues"
@@ -22,9 +26,13 @@
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2"
   },
+<<<<<<< HEAD
   "devDependencies": {
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
   },
   "description": ""
+=======
+  "devDependencies": {}
+>>>>>>> 5d92ecd6562d7312bfa28642ac03745c96f07638
 }
