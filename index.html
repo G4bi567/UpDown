@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link  rel="stylesheet" type="text/css" href="style.css">
-    <title>Your Game Title</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>UpDown</title>
 </head>
 <body>
     <div id="menu">
@@ -11,14 +11,43 @@
         <button onclick="startGame('solo')">Solo</button>
         <button onclick="startGame('local')">Local</button>
         <button onclick="startGame('multiplayer')">Multiplayer</button>
-        <div id="multiplayerLobby" style="display: none;">
-            <input type="text" id="lobbyId" placeholder="Enter Lobby ID">
-            <button onclick="joinOrCreateLobby()">Join/Create Lobby</button>
+    </div>
+
+    <div id="multiplayerLobby" style="display: none;">
+        <input type="text" id="nickname" placeholder="Enter Your Nickname">
+        <input type="text" id="lobbyId" placeholder="Enter Lobby ID">
+        <button onclick="joinLobby()">Join Lobby</button>
+        <button onclick="createNewLobby()">Create Lobby</button>
+    </div>
+    <div id="newLobbyCreated" style="display: none;">
+        Your new lobby ID: <span id="newLobbyId"></span>
+        <button onclick="copyLobbyId()">Copy Lobby ID</button>
+    </div>
+    <button onclick="toggleBackgroundMusic()">Toggle Background Music</button>
+
+
+    <div id="popup" class="ninja-popup">
+        <div class="popup-content">
+            <h2>Ninja Wisdom</h2>
+            <p>You have scaled the heights, brave ninja. Now, descend with stealth!</p>
+            <button onclick="closePopup()">Acknowledge</button>
+        </div>
+    </div>
+    <div id="popup2" class="ninja-popup">
+        <div class="popup-content">
+            <h2>Victory</h2>
+            <p>You win</p>
+        </div>
+    </div>
+    <div id="popup3" class="ninja-popup">
+        <div class="popup-content">
+            <h2>Careful</h2>
+            <p>The wind is strong here</p>
         </div>
     </div>
     
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-
     <script src="librairies/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.16/addons/p5.sound.js"></script>
     <script src="librairies/p5.collide2d.js"></script>
@@ -27,6 +56,8 @@
     <script src="platform.js"></script>
     <script src="boundary.js"></script>
     <script src="player.js"></script>
+    <script src="multiplayer.js"></script>
     <script src="sketch.js"></script>
+
 </body>
 </html>

@@ -164,7 +164,7 @@ class Player {
         } else if (this.isRunning()) {
             return 'running';
         } else {
-            return 'idle';
+            return ' ';
         }
     }
     isHit() {
@@ -189,4 +189,8 @@ class Player {
         return (this.body.label === "player1" && player1attack) || 
                (this.body.label === "player2" && player2attack);
     }
+    applyForce(force) {
+        Matter.Body.applyForce(this.body, this.body.position, force);
+    }
+    
 }
