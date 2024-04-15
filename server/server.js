@@ -11,7 +11,7 @@ const server = http.createServer((req, res) => {
 
 const io = socketIO(server);
 const lobbies = {};
-const MAX_PLAYERS_PER_LOBBY = 4;
+const MAX_PLAYERS_PER_LOBBY = 2;  // Set maximum players per lobby to 2
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
