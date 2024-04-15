@@ -1,3 +1,4 @@
+
 const GAME_WORLD_WIDTH = 2000;
 const GAME_WORLD_HEIGHT = 1000;
 const { Engine, World, Composite, Bodies } = Matter;
@@ -141,11 +142,27 @@ function preload() {
 }
 
 
+
+// Initialisation des sons avec les volumes configurés
 function setupSounds() {
     movementSound.setVolume(GameConfig.soundVolumes.movement);
     landingSound.setVolume(GameConfig.soundVolumes.landing);
     jumpSound.setVolume(GameConfig.soundVolumes.jump);
     backgroundMusic.setVolume(GameConfig.soundVolumes.backgroundMusic);
+}
+
+
+function saveOptions() {
+    GameConfig.soundVolumes.movement = parseFloat(document.getElementById('movementVolume').value);
+    GameConfig.soundVolumes.landing = parseFloat(document.getElementById('landingVolume').value);
+    GameConfig.soundVolumes.jump = parseFloat(document.getElementById('jumpVolume').value);
+    GameConfig.soundVolumes.backgroundMusic = parseFloat(document.getElementById('backgroundMusicVolume').value);
+
+    // Mise à jour des volumes des sons
+    setupSounds();
+
+    // Fermer le menu d'options
+    toggleOptionsMenu();
 }
 
 
@@ -667,6 +684,9 @@ function updateRemotePlayer(state) {
 }
 
 function escapetoggleMenuDisplay() {
+    document.getElementById('multiplayerLobby').style.display = 'none';
+    document.getElementById('optionsMenu').style.display = 'none';
+    
     if (document.getElementById('menu').style.display == 'none'){
         document.getElementById('menu').style.display = 'block';}
     else{
@@ -737,14 +757,16 @@ function resetGame() {
     gameStarted = false;
     part2Started = false;
     playerReachesTop = false;
-    timeAboveThreshold = 0; 
+    timeAboveThreshold = 0;
+    spawnPlayer2=false
 
 
     if (backgroundMusic.isPlaying()) {
         backgroundMusic.stop();
     }
 
-
+    document.getElementById('multiplayerLobby').style.display = 'none';
+    document.getElementById('optionsMenu').style.display = 'none';
     document.getElementById('menu').style.display = 'block';
     document.querySelectorAll('.game-ui').forEach(ui => ui.style.display = 'none');
 

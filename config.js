@@ -8,4 +8,3 @@ const GameConfig = {
     }
 };
 
-export default GameConfig;

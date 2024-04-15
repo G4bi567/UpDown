@@ -43,6 +43,18 @@ function createNewLobby() {
             
         });
     });
+    socket.on('connect_error', (error) => {
+        // Alert the user that the connection failed
+        alert('Failed to connect to the multiplayer server: ' + error.message);
+        resetGame()
+    });
+
+    socket.on('connect_timeout', () => {
+        // Alert the user that the connection has timed out
+        alert('Connection to the multiplayer server timed out.');
+        resetGame()
+    });
+
 
 }
 
@@ -78,6 +90,17 @@ function joinLobby() {
             initializeGame();
             setupSocketListeners();
         });
+    });
+    socket.on('connect_error', (error) => {
+        // Alert the user that the connection failed
+        alert('Failed to connect to the multiplayer server: ' + error.message);
+        resetGame()
+    });
+
+    socket.on('connect_timeout', () => {
+        // Alert the user that the connection has timed out
+        alert('Connection to the multiplayer server timed out.');
+        resetGame()
     });
 }
 

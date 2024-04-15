@@ -106,7 +106,7 @@ class Player {
             // Attack animation uses 6 frames
             frameIndex = this.currentFrame % 6;
         }else {
-            // Other animations use the full frame set (8 frames)
+            // Other animations use the 8 frames
             frameIndex = this.currentFrame % this.frames;
         }
         let flip = this.shouldFlipSprite();
@@ -185,7 +185,7 @@ class Player {
     }
 
     isAttacking() {
-        // Assuming player1attack and player2attack are global variables tracking attack state
+        // player1attack and player2attack are global variables tracking attack state
         return (this.body.label === "player1" && player1attack) || 
                (this.body.label === "player2" && player2attack);
     }

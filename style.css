@@ -148,3 +148,82 @@ button {
 button:hover {
   background-color: #368037; /* Darker green on hover */
 }
+/* Options Menu Container */
+#optionsMenu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  background: rgba(28, 22, 40, 0.9); /* semi-transparent dark background */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  color: #FFFFFF; /* White text color */
+  display: none; /* Hidden by default */
+  z-index: 105; /* Make sure it's on top */
+}
+
+/* Labels in the options menu */
+#optionsMenu label {
+  font-size: 14px;
+  margin-top: 10px;
+  color: #DDDDDD; /* Light grey for better readability */
+  display: block;
+}
+
+/* Styling for range sliders */
+#optionsMenu input[type="range"] {
+  -webkit-appearance: none; /* Override default CSS styles */
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 5px;
+  background: #4CAF50; /* Forest green */
+  outline: none;
+  opacity: 0.7; /* Partial transparency */
+  -webkit-transition: .2s; /* Transition for hover effect */
+  transition: opacity .2s;
+  cursor: pointer;
+}
+
+/* Mouse-over effects for sliders */
+#optionsMenu input[type="range"]:hover {
+  opacity: 1; /* Fully opaque on hover */
+}
+
+/* The slider handle (thumb) */
+#optionsMenu input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Remove default style */
+  appearance: none;
+  width: 18px; /* Set a specific slider handle width */
+  height: 18px; /* Set a specific slider handle height */
+  border-radius: 50%; /* Circular handle */
+  background: #FFFFFF; /* White slider handle */
+  cursor: pointer; /* Cursor changes to pointer when hovering over the slider handle */
+}
+
+#optionsMenu input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  cursor: pointer;
+}
+
+/* Button styling within options menu */
+#optionsMenu button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #368037; /* Green */
+  color: #FFFFFF; /* White */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Hover effect for buttons */
+#optionsMenu button:hover {
+  background-color: #286029; /* Darker green */
+}
