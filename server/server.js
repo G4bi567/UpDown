@@ -60,8 +60,12 @@ io.on('connection', (socket) => {
 
         // Server-side code in Node.js using socket.io
     socket.on('playerAttack', (attackData) => {
-        // Broadcast attack to all other clients in the same room, except the sender
-        socket.to(attackData.room).emit('attackReceived', attackData);
+        const lobbyId = socket.lobbyId;
+        if (lobbyId) {
+            socket.to(lobbyId).emit('attackReceived', attackData);
+            console.log(`state: attack`);
+        }
+        
     });
 
     socket.on('disconnect', () => {

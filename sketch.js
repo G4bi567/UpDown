@@ -1,4 +1,3 @@
-
 const GAME_WORLD_WIDTH = 2000;
 const GAME_WORLD_HEIGHT = 1000;
 const { Engine, World, Composite, Bodies } = Matter;
@@ -60,7 +59,6 @@ let windEnd = 200 ;
 const maxWindVelocity = 3;
 
 let lobbyReady = false;
-let roleplayer;
 
 
 let lastUpdateTime = Date.now();
@@ -72,19 +70,24 @@ const TELEPORT_OFFSET = 50;
 
 
 function startGame(mode_name){
-    document.getElementById('menu').style.display = 'none';
+    
     mode = mode_name;
     if (mode_name == "solo") {
+        player2=null
+        resetGame()
         lobbyReady = true;
         initializeGame();
     } else if (mode_name == "local") {
+        resetGame()
         lobbyReady = true;
         spawnPlayer2 = true;
         initializeGame();
     } else if (mode_name == "multiplayer") {
+        resetGame()
         spawnPlayer2 = true;
         toggleMultiplayerLobby();
     }
+    document.getElementById('menu').style.display = 'none';
 }
 
 
@@ -107,7 +110,9 @@ function setup() {
         Composite.add(world, player2);
         if (playerRole == "player2"){
             player1 = new Player(respawnPositionPlayer2.x, respawnPositionPlayer2.y, 16, 24)
+            player1.body.label="player1"
             player2 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
+            player2.body.label="player2"
         }
         
         
@@ -277,9 +282,13 @@ function updatePlayerVelocity(player) {
     } else if (player === player2) {
         handlePlayerMovement(player, 'ArrowLeft', 'ArrowRight', lookingleft2);
     }
+
 }
 
 function handlePlayerMovement(player, leftKey, rightKey, lookingLeft) {
+    if (mode == "multiplayer" && player == player2 ){
+        return
+    }
     /**
      * Applies dynamic forces to a player based on current game inputs and player status.
      * It adjusts player velocity depending on input keys and current game mode.
@@ -307,10 +316,11 @@ function handlePlayerMovement(player, leftKey, rightKey, lookingLeft) {
 
     Matter.Body.setVelocity(player.body, playerVelocity);
 
-    if (player === player1) {
-        lookingleft1 = lookingLeft;
-    } else if (player === player2) {
+    
+    if (player === player2) {
         lookingleft2 = lookingLeft;
+    } else if (player === player1) {
+        lookingleft1 = lookingLeft;
     }
 }
 
@@ -331,7 +341,7 @@ function draw() {
         drawWaitingScreen();
         return;
     }
-
+    
     renderGameMode();
 
     checkGameConditions();
@@ -343,7 +353,7 @@ function renderGameMode() {
     if (mode === 'multiplayer' && player2) {
         drawSinglePlayerView();
         throttleUpdateGame();
-    } else if (spawnPlayer2) {
+    } else if (player2) {
         drawMultiplayerView();
     } else {
         drawSinglePlayerView();
@@ -395,25 +405,24 @@ function handleWindConditions() {
 }
 
 function throttleUpdateGame() {
-    if (!lastUpdateTime || Date.now() - lastUpdateTime > 1000 / UPDATE_RATE) {
         updateGame();
         lastUpdateTime = Date.now();
-    }
 }
 
 function updateGame() {
 
-    if (gameStarted && mode === 'multiplayer' && Date.now() - lastUpdateTime > 1000 / UPDATE_RATE) {
+    if (gameStarted && mode === 'multiplayer') {
         const playerState = {
             position: player1.body.position,
-            velocity: player1.body.velocity
+            velocity: player1.body.velocity,
+            lookingleft: lookingleft1
         };
         socket.emit('updatePlayerState', playerState);
-        lastUpdateTime = Date.now();
     }
 }
 
 function drawMultiplayerView() {
+
 
     const { midpointX, midpointY, dynamicZoom } = calculateCameraSettings(player1, player2);
     setupCamera(midpointX, midpointY, dynamicZoom);
@@ -423,10 +432,11 @@ function drawMultiplayerView() {
 }
 
 function drawSinglePlayerView() {
+    
     /**
      * Draws the game view for a single player.
      * Sets up the camera focused on the single player, managing zoom and translation to keep the player centered.
-     * Handles drawing of the game's background, the player, and checks for interactions with game elements.
+     * Handles drawing ossf the game's background, the player, and checks for interactions with game elements.
      */
     if (!player1 || !player1.body) {
         console.log("Player1 or player1.body is undefined");
@@ -434,11 +444,17 @@ function drawSinglePlayerView() {
     }
     const cameraX = -player1.body.position.x * zoom + width / 2;
     const cameraY = -player1.body.position.y * zoom + height / 2;
-
+    
     setupCamera(cameraX, cameraY, zoom);
     drawGameScene();
-    drawPlayers(player1, null, zoom);
+    if (mode == "solo"){
+        drawPlayers(player1, null, zoom);
+    }else{
+        drawPlayers(player1, player2, zoom);
+    }
+    
     pop();
+    
 }
 
 function calculateCameraSettings(player1, player2) {
@@ -468,7 +484,7 @@ function setupCamera(x, y, zoom) {
      * @param {number} zoom - The zoom level to apply.
      */
     push(); 
-    if (spawnPlayer2){
+    if (spawnPlayer2 && mode =="local"){
     translate(width / 2 - x * zoom, height / 2 - y * zoom);
     }else{
         translate(x,y);
@@ -564,29 +580,30 @@ function attack(attacker, target, lastAttackTime) {
             } else {
                 lastAttackTimePlayer2 = currentMillis;
             }
-            applyAttackForce(attacker, target);
-            if (mode === "multiplayer" && lobbyReady) {
+            let force;
+            if (attacker.body.position.x - target.body.position.x < 0) {
+                force = { x: 4, y: -4 };
+            } else {
+                force = { x: -4, y: -4 };
+            }
+        
+            applyAttackForce( target, force);
+            if (mode == "multiplayer" && lobbyReady) {
+                console.log("attack")
                 socket.emit('playerAttack', {
                     attackerId: attacker.body.label,
-                    targetId: target.body.label
+                    targetId: target.body.label,
+                    force: force
                 });
             }
         }
     }
 }
 
-function applyAttackForce(attacker, target) {
-    let force;
+function applyAttackForce(target,force) { 
     setAttackRoles(target);
     attackSound.play();
     hitSound.play();
-
-    if (attacker.body.position.x - target.body.position.x < 0) {
-        force = { x: 4, y: -4 };
-    } else {
-        force = { x: -4, y: -4 };
-    }
-
 
     Matter.Body.setVelocity(target.body, force);
 }
@@ -659,11 +676,11 @@ function setupSocketListeners() {
         return;
     }
     socket.on('attackReceived', (data) => {
-        let attacker = (data.attackerId === 'player1') ? player1 : player2;
-        let target = (data.targetId === 'player1') ? player1 : player2;
+        let attacker = player2
+        let target = player1 
         if (target && attacker) {
-            applyAttackForce(attacker, target);
-        }
+                applyAttackForce( target,data.force);
+            }
     });
 
 
@@ -678,6 +695,7 @@ function updateRemotePlayer(state) {
     if (player2 && player2.body) {
         Matter.Body.setPosition(player2.body, state.position);
         Matter.Body.setVelocity(player2.body, state.velocity);
+        lookingleft2 = state.lookingleft
     } else {
         console.log("player2 is not properly initialized");
     }
@@ -759,6 +777,7 @@ function resetGame() {
     playerReachesTop = false;
     timeAboveThreshold = 0;
     spawnPlayer2=false
+    lobbyReady=false
 
 
     if (backgroundMusic.isPlaying()) {
