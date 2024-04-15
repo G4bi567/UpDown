@@ -47,20 +47,21 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Part of your server-side JavaScript
-socket.on('updatePlayerState', (playerState) => {
-    const lobbyId = socket.lobbyId;
-    if (lobbyId) {
-        // Broadcast the player state to other players in the same lobby
-        socket.to(lobbyId).emit('updateRemotePlayer', { playerId: socket.id, ...playerState });
-        console.log(`state: ${playerState.velocity}`);
-    }
-});
+        // Part of your server-side JavaScript
+    socket.on('updatePlayerState', (playerState) => {
+        const lobbyId = socket.lobbyId;
+        if (lobbyId) {
+            // Broadcast the player state to other players in the same lobby
+            socket.to(lobbyId).emit('updateRemotePlayer', { playerId: socket.id, ...playerState });
+            console.log(`state: ${playerState.velocity}`);
+        }
+    });
 
 
-    socket.on('message', (data) => {
-        console.log(`Message from ${socket.id} in lobby ${socket.lobbyId}:`, data);
-        io.to(socket.lobbyId).emit('message', data);
+        // Server-side code in Node.js using socket.io
+    socket.on('playerAttack', (attackData) => {
+        // Broadcast attack to all other clients in the same room, except the sender
+        socket.to(attackData.room).emit('attackReceived', attackData);
     });
 
     socket.on('disconnect', () => {

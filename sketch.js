@@ -1,50 +1,78 @@
-let gameStarted = false;
 const GAME_WORLD_WIDTH = 2000;
 const GAME_WORLD_HEIGHT = 1000;
-let playerNickname = '';
-let spawnPlayer2 = false;
-let mode 
-let particles = [];
-let Windzonemet=true
 const { Engine, World, Composite, Bodies } = Matter;
-let player1
+let CollisionBlocks = [], platformCollisionBlocks = [];
+
+
+let gameStarted = false;
+let mode;
+let player1;
 let player2;
+let spawnPlayer2 = false;
+
+
+let engine, world;
+let zoom = 4;
+
+
+let backgroundImage;
+let lastWalkSoundTime = 0;
+let walkSoundDelay = 1000;
+let jumpSound, landingSound, movementSound,backgroundMusic;
+let isMusicPlaying = false;
+
+let part2Started = false;
+let playerReachesTop = false
+let timeAboveThreshold = 0;
+const winningAltitude = 1100;
+const requiredTime = 2000;
+
 let respawnPosition = { x: 50, y: 1100 };
 let respawnPositionPlayer2 = { x: respawnPosition.x + 100, y: respawnPosition.y };
+
+
 const keys = { d: false, a: false, ArrowLeft: false, ArrowRight: false };
 let lookingleft1 = false;
 let lookingleft2 = false;
 
-let engine, world, boxes = [], zoom = 4, ground, sol, backgroundImage, CollisionBlocks = [], platformCollisionBlocks = [];
-let lastWalkSoundTime = 0;
-let walkSoundDelay = 1000;
-let jumpSound, landingSound, movementSound;
-let backgroundMusic;
+
+let playerNickname = '';
+
+
 let isPlayer1InAir = false;
 let isPlayer2InAir = false;
-let menuVisible = true;
 let lastAttackTimePlayer1 = 0;
 let lastAttackTimePlayer2 = 0;
 let attackCooldown = 1500;
-let lastKeyPressTimePlayer2 = 0;
 let player1hit = false;
 let player1attack = false;
 let player2hit = false;
 let player2attack = false;
-let part2Started = false;
-const windStrength = 0.0005; // Adjust this value based on desired effect
-const windDirection = { x: 1, y: 0 }; // Wind blowing to the right
-let windStart =350
-let windEnd = 200
-let windapply = false 
-let playerReachesTop = false
 let hasPlayerFallen = false;
-let otherPlayers = {}; // Tracks other players
-let roleplayer
+
+
+let Windzonemet=true;
+const windStrength = 0.0005;
+const windDirection = { x: 1, y: 0 };
+let windStart =350;
+let windEnd = 200 ;
+const maxWindVelocity = 3;
+
 let lobbyReady = false;
-let timeAboveThreshold = 0;
-const winningAltitude = 1100;
-const requiredTime = 2000; // Time in milliseconds
+let roleplayer;
+
+
+let lastUpdateTime = Date.now();
+const UPDATE_RATE = 15;
+
+
+const MAX_DISTANCE = 500;
+const TELEPORT_OFFSET = 50;
+
+
+let lastPhysicsUpdate = Date.now();
+const PHYSICS_UPDATE_RATE = 30;
+
 
 function startGame(mode_name){
     document.getElementById('menu').style.display = 'none';
@@ -59,7 +87,6 @@ function startGame(mode_name){
     } else if (mode_name == "multiplayer") {
         spawnPlayer2 = true;
         toggleMultiplayerLobby();
-        // Don't call initializeGame() here; it will be called after lobby setup
     }
 }
 
@@ -95,15 +122,14 @@ function setup() {
     setupSounds();
 
 }
-let isMusicPlaying = false;  // Flag to track music state
 
 function toggleBackgroundMusic() {
-    if (backgroundMusic.isPlaying()) {  // Check if the music is playing
-        backgroundMusic.pause();  // Pause the music
-        isMusicPlaying = false;  // Update flag
+    if (backgroundMusic.isPlaying()) {
+        backgroundMusic.pause();
+        isMusicPlaying = false; 
     } else {
-        backgroundMusic.loop();  // Play the music
-        isMusicPlaying = true;  // Update flag
+        backgroundMusic.loop();  
+        isMusicPlaying = true;  
     }
 }
 
@@ -157,308 +183,49 @@ function isPlayerTouching(object ,player) {
     return collision ? collision.collided : false;
 }
 
-function handleKeyDown(event) {
-    
-    if (event.key in keys) {
-
-        keys[event.key] = true;
-    } else if (event.key === 'w' && Math.abs(player1.body.velocity.y) < 0.000000001) {
-        jump(player1);
-        jumpSound.play();
-    } else if (event.key === 'ArrowUp' && Math.abs(player2.body.velocity.y) < 0.01 && spawnPlayer2) {
-        jump(player2);
-        jumpSound.play();
-    } else if (event.key === 'Escape') {
-
-        toggleMenuDisplay();
-    }if (player2){
-        if (event.key === 'l') {
-        attack(player2,player1,lastAttackTimePlayer2)
-        }else if (event.key === 'g') {
-        attack(player1,player2,lastAttackTimePlayer1)
-        }
-    }
-}
-
 window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
 
-function handleKeyUp(event) {
+function handleKeyDown(event) {
+
     if (event.key in keys) {
-        keys[event.key] = false;
-        movementSound.stop();
-        walkSoundDelay = 0;
+        keys[event.key] = true;
     }
+
+    handleGameControls(event);
 }
-let lastPhysicsUpdate = Date.now();
-const PHYSICS_UPDATE_RATE = 30; // Updates per second
 
-function applyPlayerForces(player) {
-    if (Date.now() - lastPhysicsUpdate > 1000 / PHYSICS_UPDATE_RATE  || mode != "multiplayer" ) {
-        let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y }
-    
-        if (player == player1) {
-
-            if (!player1hit) {
-                if (keys.a && keys.d) {
-
-                    playerVelocity.x = 0;
-                } else if (!keys.a && !keys.d) {
-                    playerVelocity.x = 0;
-                } else if (keys.a && playerVelocity.x >= -2.5) {
-                    playWalkSound();
-                    
-                    playerVelocity.x = -2.5;
-                    lookingleft1 = true;
-
-                } else if (keys.d && playerVelocity.x <= 2.5) {
-                    playWalkSound();
-                    playerVelocity.x = 2.5;
-                    lookingleft1 = false;
-                }
+function handleGameControls(event) {
+    switch (event.key) {
+        case 'w':
+            tryPlayerJump(player1, 0.000000001);
+            break;
+        case 'ArrowUp':
+            if (spawnPlayer2) {
+                tryPlayerJump(player2, 0.000000001);
             }
-        } else {
-            if (!player2hit) {
-                
-                if (keys.ArrowLeft && keys.ArrowRight || !keys.ArrowRight && !keys.ArrowLeft) {
-                    playerVelocity.x = 0;
-                } else if (keys.ArrowLeft) {
-                    playWalkSound();
-                    playerVelocity.x = -2.5;
-                    lookingleft2 = true;
-                } else if (keys.ArrowRight) {
-                    playWalkSound();
-                    playerVelocity.x = 2.5;
-                    lookingleft2 = false;
-                }
+            break;
+        case 'Escape':
+            escapetoggleMenuDisplay();
+            break;
+        case 'l':
+            if (player2) {
+                attack(player2, player1, lastAttackTimePlayer2);
             }
-        }
-    Matter.Body.setVelocity(player.body, playerVelocity);
-    lastPhysicsUpdate = Date.now();
-    }
-}
-
-function handlePlayerPosition() {
-    const playerX = player1.body.position.x;
-
-    if (playerX < player1.w / 2) {
-        Matter.Body.setPosition(player1.body, { x: player1.w / 2, y: player1.body.position.y });
-    } else if (playerX > width / (zoom - 2) - player1.w - 50) {
-        Matter.Body.setPosition(player1.body, { x: width / (zoom - 2) - player1.w - 50, y: player1.body.position.y });
-    }
-}
-
-function checkPlayerReachedTree(player) {
-    // Assuming the tree's position is known
-    const treePosition = { x: 420, y: 104 };
-    // Check if player is near the tree
-    if (dist(player.body.position.x, player.body.position.y, treePosition.x, treePosition.y) < 15) {
-        startPart2();
-    }
-}
-function draw() {
-    if (gameStarted) {
-        if (mode === 'multiplayer' && player2) {
-            drawSinglePlayer()
-            throttleUpdateGame();
-        }else if(spawnPlayer2){
-            drawMultiplayer();
-        } else {
-            drawSinglePlayer();
-        }
-        
-        checkifwin(player1)
-        if (spawnPlayer2){
-            checkifwin(player2)
-            localmodeplay()
-        }
-        if (!part2Started) {
-            checkPlayerReachedTree(player1);
-        }
-        if (part2Started) {
-            checkPlayerFall(player1);
-        }
-        if (Windzonemet && player1.body.position.y < windStart ){
-            Windcareful()
-        }
-        applyWindForce(player1);
-  
-        if (spawnPlayer2 && mode == "local") {
-
-            if (Windzonemet && player2.body.position.y < windStart){
-                Windcareful()
+            break;
+        case 'g':
+            if (player2) {
+                attack(player1, player2, lastAttackTimePlayer1);
             }
-            applyWindForce(player2);
-        }
-
-        if (playerReachesTop) {
-            playerReachesTop = false;
-            showPopup();
-        }
-    } else {
-        drawWaitingScreen();
+            break;
     }
 }
 
-
-function throttleUpdateGame() {
-    // Throttle the update game function to reduce network load
-    if (!lastUpdateTime || Date.now() - lastUpdateTime > 1000 / UPDATE_RATE) {
-        updateGame();
-        lastUpdateTime = Date.now();
+function tryPlayerJump(player, threshold) {
+    if (Math.abs(player.body.velocity.y) < threshold) {
+        jump(player);
+        jumpSound.play();
     }
-}
-
-
-function drawMultiplayer() {
-    let midpointX = (player1.body.position.x + player2.body.position.x) / 2;
-    let midpointY = (player1.body.position.y + player2.body.position.y) / 2;
-
-    // Calculate the dynamic zoom based on the distance between players
-    let distanceBetweenPlayers = dist(player1.body.position.x, player1.body.position.y, player2.body.position.x, player2.body.position.y);
-    let dynamicZoom = spawnPlayer2 ? constrain(map(distanceBetweenPlayers, 0, 500, 3, 1), 1, 3) : zoom;
-
-    // Apply the translations and scaling to simulate camera movement
-    // Make sure to translate by negative values to move the canvas in the opposite direction of the player movement
-    let cameraX = width / 2 - midpointX * dynamicZoom;
-    let cameraY = height / 2 - midpointY * dynamicZoom;
-
-    push(); // Push the current transformation matrix onto the stack
-    translate(cameraX, cameraY);
-    scale(dynamicZoom);
-
-    background(0);
-    Engine.update(engine);
-    image(backgroundImage, 0, 0);
-
-    if (player1.body.position.y > height * 2 + 100) {
-        respawnPlayer(player1);
-    }
-    if (player2.body.position.y > height * 2 + 100) {
-        respawnPlayer(player2);
-    }
-    applyPlayerForces(player1);
-    drawAttackGauge(player1);
-    player1.show();
-    if (player2) {
-        applyPlayerForces(player2);
-        drawAttackGauge(player2);
-        player2.show(); // Ensure player2 is also rendered
-    }
-
-    for (let i = 0; i < CollisionBlocks.length; i++) {
-        const block = CollisionBlocks[i];
-        block.show();
-        block.friction = 0;
-
-        if (isPlayerTouching(block,player1)) {
-            if (isPlayer1InAir) {
-                isPlayer1InAir = false;
-                landingSound.play();
-            }
-        }
-        if (isPlayerTouching(block,player2)) {
-            if (isPlayer2InAir) {
-                isPlayer2InAir = false;
-                landingSound.play();
-            }
-        }
-    }
-
-
-    translate(-cameraX * dynamicZoom, -cameraY * dynamicZoom);
-    scale(1 / dynamicZoom);
-    pop();
-}
-
-function drawSinglePlayer() {
-    if (!player1 || !player1.body) {
-        console.log("player1 or player1.body is undefined");
-        return; // Exit the function if player1 or its body is undefined
-    }
-    let cameraX = -player1.body.position.x * zoom + width / 2;
-    let cameraY = -player1.body.position.y * zoom + height / 2;
-
-    scale(zoom);
-    translate(cameraX / zoom, cameraY / zoom);
-    background(0);
-    Engine.update(engine);
-    image(backgroundImage, 0, 0);
-
-    if (player1.body.position.y > height * 2 + 100) {
-        respawnPlayer(player1);
-    }
-
-    if (player1.body.position.y > height * 2 + 100) {
-        respawnPlayer(player1);
-    }
-    
-    applyPlayerForces(player1);
-    drawAttackGauge(player1);
-    player1.show();
-    if (player2) {
-        if (player2.body.position.y > height * 2 + 100) {
-            respawnPlayer(player2);
-        }
-        applyPlayerForces(player2);
-        drawAttackGauge(player2);
-        player2.show(); // Ensure player2 is also rendered
-    }
-
-    for (let i = 0; i < CollisionBlocks.length; i++) {
-        const block = CollisionBlocks[i];
-        block.show();
-        block.friction = 0;
-
-        if (isPlayerTouching(block,player1)) {
-            if (isPlayer1InAir) {
-                isPlayer1InAir = false;
-                landingSound.play();
-            }
-        }
-    }
-
-    if (abs(player1.body.velocity.y) > 0.1) {
-        player1.friction = 0;
-    } else {
-        player1.friction = 1;
-    }
-
-
-    translate(-cameraX / zoom, -cameraY / zoom);
-    scale(1 / zoom);
-}
-
-function drawWaitingScreen() {
-    background(0);
-    fill(255);
-    // Draw a message or waiting screen indicating that the game is not started
-}
-
-function startPart2() {
-    part2Started = true;
-    playerReachesTop = true
-    respawnPosition = {x:500,y:50}
-    respawnPositionPlayer2 = {x:550,y:50}
-    // Initialize part 2 environment
-    // You may load different platforms, change the environment, etc.
-}
-
-function checkPlayerFall(player) {
-    // Check if the player is falling fast
-    if (player.body.velocity.y > 5.3 && part2Started) {
-        hasPlayerFallen = true;
-    }
-
-    // Check if the player has stopped falling (velocity is near zero) and has previously fallen
-    if (hasPlayerFallen && Math.abs(player.body.velocity.y) <= 0.13) {
-        respawnPlayer(player); // Respawn the player
-        hasPlayerFallen = false; // Reset the flag
-    }
-}
-// Helper function to clamp values within a specified range
-function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
 }
 
 function jump(player) {
@@ -471,36 +238,313 @@ function jump(player) {
     }
 }
 
+function handleKeyUp(event) {
+    if (event.key in keys) {
+        keys[event.key] = false;
+        movementSound.stop();
+        walkSoundDelay = 0;
+    }
+}
+
+function applyPlayerForces(player) {
+    if (Date.now() - lastPhysicsUpdate > 1000 / PHYSICS_UPDATE_RATE ) {
+        updatePlayerVelocity(player);
+        lastPhysicsUpdate = Date.now(); 
+    }
+}
+
+function updatePlayerVelocity(player) {
+    if (player === player1) {
+        handlePlayerMovement(player, 'a', 'd', lookingleft1);
+    } else if (player === player2) {
+        handlePlayerMovement(player, 'ArrowLeft', 'ArrowRight', lookingleft2);
+    }
+}
+
+function handlePlayerMovement(player, leftKey, rightKey, lookingLeft) {
+    let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y };
+
+    if (!(player === player1 ? player1hit : player2hit)) {
+        if (keys[leftKey] && keys[rightKey]) {
+            playerVelocity.x = 0;
+        } else if (keys[leftKey]) {
+            playerVelocity.x = -2.5;
+            lookingLeft = true;
+        } else if (keys[rightKey]) {
+            playerVelocity.x = 2.5;
+            lookingLeft = false;
+        } else {
+            playerVelocity.x = 0;
+        }
+        if (playerVelocity.x !== 0) playWalkSound();
+    }
+
+    Matter.Body.setVelocity(player.body, playerVelocity);
+
+    if (player === player1) {
+        lookingleft1 = lookingLeft;
+    } else if (player === player2) {
+        lookingleft2 = lookingLeft;
+    }
+}
+
+
+
+function checkPlayerReachedTree(player) {
+    const treePosition = { x: 420, y: 104 };
+    const proximityThreshold = 15;
+
+    const distance = dist(player.body.position.x, player.body.position.y, treePosition.x, treePosition.y);
+    if (distance < proximityThreshold) {
+        startPart2();
+    }
+}
+
+function draw() {
+    if (!gameStarted) {
+        drawWaitingScreen();
+        return;
+    }
+
+    renderGameMode();
+
+    checkGameConditions();
+
+    handlePlayerConditions();
+}
+
+function renderGameMode() {
+    if (mode === 'multiplayer' && player2) {
+        drawSinglePlayerView();
+        throttleUpdateGame();
+    } else if (spawnPlayer2) {
+        drawMultiplayerView();
+    } else {
+        drawSinglePlayerView();
+    }
+}
+
+function checkGameConditions() {
+    checkifwin(player1);
+    if (spawnPlayer2) {
+        checkifwin(player2);
+    }
+    if (!part2Started) {
+        checkPlayerReachedTree(player1);
+        if (spawnPlayer2) {
+            checkPlayerReachedTree(player2);
+        }
+    } else {
+        checkPlayerFall(player1);
+        if (spawnPlayer2) {
+            checkPlayerFall(player2);
+        }
+    }
+    if (mode=="local"){
+        localmodeplay()
+    }
+}
+
+function handlePlayerConditions() {
+    handleWindConditions();
+
+    if (playerReachesTop) {
+        playerReachesTop = false;
+        showPopup();
+    }
+}
+
+function handleWindConditions() {
+    if (!Windzonemet) return;
+
+    if (player1.body.position.y < windStart) {
+        Windcareful();
+        applyWindForce(player1);
+    }
+
+    if (spawnPlayer2 && mode == "local" && player2.body.position.y < windStart) {
+        Windcareful();
+        applyWindForce(player2);
+    }
+}
+
+function throttleUpdateGame() {
+    if (!lastUpdateTime || Date.now() - lastUpdateTime > 1000 / UPDATE_RATE) {
+        updateGame();
+        lastUpdateTime = Date.now();
+    }
+}
+
+function updateGame() {
+
+    if (gameStarted && mode === 'multiplayer' && Date.now() - lastUpdateTime > 1000 / UPDATE_RATE) {
+        const playerState = {
+            position: player1.body.position,
+            velocity: player1.body.velocity
+        };
+        socket.emit('updatePlayerState', playerState);
+        lastUpdateTime = Date.now();
+    }
+}
+
+function drawMultiplayerView() {
+    const { midpointX, midpointY, dynamicZoom } = calculateCameraSettings(player1, player2);
+    setupCamera(midpointX, midpointY, dynamicZoom);
+    drawGameScene();  
+    drawPlayers(player1, player2, dynamicZoom);
+    pop();
+}
+
+function drawSinglePlayerView() {
+    if (!player1 || !player1.body) {
+        console.log("Player1 or player1.body is undefined");
+        return;
+    }
+    const cameraX = -player1.body.position.x * zoom + width / 2;
+    const cameraY = -player1.body.position.y * zoom + height / 2;
+
+    setupCamera(cameraX, cameraY, zoom);
+    drawGameScene();
+    drawPlayers(player1, null, zoom);
+    pop();
+}
+
+function calculateCameraSettings(player1, player2) {
+    const midpointX = (player1.body.position.x + player2.body.position.x) / 2;
+    const midpointY = (player1.body.position.y + player2.body.position.y) / 2;
+    const distanceBetweenPlayers = dist(player1.body.position.x, player1.body.position.y, player2.body.position.x, player2.body.position.y);
+    const dynamicZoom = spawnPlayer2 ? constrain(map(distanceBetweenPlayers, 0, 500, 3, 1), 1, 3) : zoom;
+    return { midpointX, midpointY, dynamicZoom };
+}
+
+function setupCamera(x, y, zoom) {
+    push(); 
+    if (spawnPlayer2){
+    translate(width / 2 - x * zoom, height / 2 - y * zoom);
+    }else{
+        translate(x,y);
+    }
+    scale(zoom);
+    background(0);
+    Engine.update(engine);
+    image(backgroundImage, 0, 0);
+}
+
+function drawGameScene() {
+    [player1, player2].forEach(player => {
+        if (player && player.body.position.y > height * 2 + 100) {
+            respawnPlayer(player);
+        }
+    });
+}
+
+function drawPlayers(player1, player2, zoom) {
+    [player1, player2].filter(player => player).forEach(player => {
+        applyPlayerForces(player);
+        drawAttackGauge(player);
+        player.show();
+        checkPlayerInteractions(player, zoom);
+    });
+}
+
+function checkPlayerInteractions(player, zoom) {
+    CollisionBlocks.forEach(block => {
+        block.show();
+        block.friction = 0;
+        if (isPlayerTouching(block, player)) {
+            handlePlayerLanding(player);
+        }
+    });
+}
+
+function handlePlayerLanding(player) {
+    if ((player === player1 && isPlayer1InAir) || (player === player2 && isPlayer2InAir)) {
+        landingSound.play();
+        if (player === player1) {
+            isPlayer1InAir = false;
+        } else {
+            isPlayer2InAir = false;
+        }
+    }
+}
+
+function drawWaitingScreen() {
+    background(0);
+    fill(255);
+
+}
+
+function startPart2() {
+    part2Started = true;
+    playerReachesTop = true
+    respawnPosition = {x:500,y:50}
+    respawnPositionPlayer2 = {x:550,y:50}
+
+}
+
+function checkPlayerFall(player) {
+    const maxFallSpeed  = 5.3
+    if (player.body.velocity.y > maxFallSpeed  && part2Started) {
+        hasPlayerFallen = true;
+    }
+
+    const stabilizationSpeed  = 0.1
+    if (hasPlayerFallen && Math.abs(player.body.velocity.y) <= stabilizationSpeed ) {
+        respawnPlayer(player); 
+        hasPlayerFallen = false; 
+    }
+}
+
 function respawnPlayer(player) {
     Matter.Body.setPosition(player.body, respawnPosition);
     Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
 }
+
 function attack(attacker, target, lastAttackTime) {
-    // Check if players are close enough to interact
+
     const playersCloseEnough = abs(player1.body.position.x - player2.body.position.x) <= 30 &&
                                abs(player1.body.position.y - player2.body.position.y) <= 30;
     if (playersCloseEnough) {
         const currentMillis = Date.now();
-        // Check if the attacker can attack based on cooldown
+
         if (currentMillis - lastAttackTime > attackCooldown) {
-            attacker.attackGaugeVisible = true; // Show the gauge
-            attacker.lastAttackTime = currentMillis; // Record the attack time
+            attacker.attackGaugeVisible = true;
+            attacker.lastAttackTime = currentMillis;
             if (attacker.body.label === 'player1') {
                 lastAttackTimePlayer1 = currentMillis;
             } else {
                 lastAttackTimePlayer2 = currentMillis;
             }
-            attackSound.play();
-            hitSound.play();
-            setAttackRoles(target);
             applyAttackForce(attacker, target);
+            if (mode === "multiplayer" && lobbyReady) {
+                socket.emit('playerAttack', {
+                    attackerId: attacker.body.label,
+                    targetId: target.body.label
+                });
+            }
         }
     }
 }
 
+function applyAttackForce(attacker, target) {
+    let force;
+    setAttackRoles(target);
+    attackSound.play();
+    hitSound.play();
+
+    if (attacker.body.position.x - target.body.position.x < 0) {
+        force = { x: 4, y: -4 };
+    } else {
+        force = { x: -4, y: -4 };
+    }
+
+
+    Matter.Body.setVelocity(target.body, force);
+}
+
 
 function setAttackRoles(target) {
-    // Determine which player is hit and which player is attacking
+
     if (target.body.label === 'player1') {
         player1hit = true;
         player2attack = true;
@@ -509,7 +553,6 @@ function setAttackRoles(target) {
         player1attack = true;
     }
 
-    // Reset the roles after a delay
     setTimeout(() => {
         if (target.body.label === 'player1') {
             player1hit = false;
@@ -521,11 +564,36 @@ function setAttackRoles(target) {
     }, 600);
 }
 
-const maxWindVelocity = 3; // Maximum velocity when in the wind zone
+function drawAttackGauge(player) {
+    if (player.attackGaugeVisible) {
+        const currentMillis = Date.now();
+        const timeElapsed = currentMillis - player.lastAttackTime;
+        const gaugeWidth = Math.max(0, player.attackGaugeWidth - (player.attackGaugeWidth * timeElapsed / attackCooldown));
+
+        push();
+        fill(255,255, 255);
+        noStroke();
+        rect(player.body.position.x - player.attackGaugeWidth / 2, player.body.position.y - 30, gaugeWidth, player.attackGaugeHeight);
+        pop();
+
+        if (timeElapsed >= attackCooldown) {
+            player.attackGaugeVisible = false; 
+        }
+    }
+}
+
+function Windcareful() {
+    document.getElementById('popup3').style.display = 'block';
+    setTimeout(() => {
+        document.getElementById('popup3').style.display = 'none';
+    }, 3000);
+    Windzonemet = false
+}
 
 function applyWindForce(player) {
+    
     if (player.body.position.y > windEnd && player.body.position.y < windStart) {
-        // Only apply wind force if the player's velocity is below the maximum
+
         if (Math.abs(player.body.velocity.x) < maxWindVelocity) {
             let windForce = { 
                 x: windStrength * windDirection.x, 
@@ -536,46 +604,43 @@ function applyWindForce(player) {
     }
 }
 
-
-function applyAttackForce(attacker, target) {
-    let force;
-
-    // Determine the direction of the force based on the attacker's position
-    if (attacker.body.position.x - target.body.position.x < 0) {
-        force = { x: 4, y: -4 };
-    } else {
-        force = { x: -4, y: -4 };
+function setupSocketListeners() {
+    if (!socket) {
+        console.log("Socket not initialized when setting up listeners");
+        return;
     }
+    socket.on('attackReceived', (data) => {
+        let attacker = (data.attackerId === 'player1') ? player1 : player2;
+        let target = (data.targetId === 'player1') ? player1 : player2;
+        if (target && attacker) {
+            applyAttackForce(attacker, target);
+        }
+    });
 
-    // Apply the force to the target
-    Matter.Body.setVelocity(target.body, force);
+
+    socket.on('updateRemotePlayer', (data) => {
+        console.log("Received data for remote player:", data);
+        updateRemotePlayer(data);
+    });
+
 }
 
+function updateRemotePlayer(state) {
+    if (player2 && player2.body) {
+        Matter.Body.setPosition(player2.body, state.position);
+        Matter.Body.setVelocity(player2.body, state.velocity);
+    } else {
+        console.log("player2 is not properly initialized");
+    }
+}
 
-function toggleMenuDisplay() {
+function escapetoggleMenuDisplay() {
     if (document.getElementById('menu').style.display == 'none'){
         document.getElementById('menu').style.display = 'block';}
     else{
         document.getElementById('menu').style.display = 'none';
     }
     
-}
-function drawAttackGauge(player) {
-    if (player.attackGaugeVisible) {
-        const currentMillis = Date.now();
-        const timeElapsed = currentMillis - player.lastAttackTime;
-        const gaugeWidth = Math.max(0, player.attackGaugeWidth - (player.attackGaugeWidth * timeElapsed / attackCooldown));
-
-        push();
-        fill(255,255, 255); // Red color for the gauge
-        noStroke();
-        rect(player.body.position.x - player.attackGaugeWidth / 2, player.body.position.y - 30, gaugeWidth, player.attackGaugeHeight);
-        pop();
-
-        if (timeElapsed >= attackCooldown) {
-            player.attackGaugeVisible = false; // Hide the gauge after cooldown
-        }
-    }
 }
 
 function showPopup() {
@@ -586,87 +651,47 @@ function closePopup() {
     document.getElementById('popup').style.display = 'none';
 }
 
-let lastUpdateTime = Date.now();
-const UPDATE_RATE = 15; 
-function updateGame() {
-    // Throttling network updates
-    if (gameStarted && mode === 'multiplayer' && Date.now() - lastUpdateTime > 1000 / UPDATE_RATE) {
-        const playerState = {
-            position: player1.body.position,
-            velocity: player1.body.velocity
-            // Other player properties
-        };
-        socket.emit('updatePlayerState', playerState);
-        lastUpdateTime = Date.now();
-    }
-}
-
-
-
-function setupSocketListeners() {
-    if (!socket) {
-        console.log("Socket not initialized when setting up listeners");
-        return;
-    }
-
-    socket.on('updateRemotePlayer', (data) => {
-        console.log("Received data for remote player:", data);
-        updateRemotePlayer(data);
-    });
-
-    // Add other socket event listeners here as needed
-}
-
-// Call this function after you are sure the socsket is initialized
-
-
-function updateRemotePlayer(state) {
-    if (player2 && player2.body) {
-        Matter.Body.setPosition(player2.body, state.position);
-        Matter.Body.setVelocity(player2.body, state.velocity);
-    } else {
-        console.log("player2 is not properly initialized");
-    }
-}
 function showVictoryPopup() {
     document.getElementById('popup2').style.display = 'block';
     setTimeout(() => {
         document.getElementById('popup2').style.display = 'none';
         showGameMenu();
-    }, 3000); // Display the popup for 3 seconds before showing the menu
+    }, 3000); 
 }
-function Windcareful() {
-    document.getElementById('popup3').style.display = 'block';
-    setTimeout(() => {
-        document.getElementById('popup3').style.display = 'none';
-    }, 3000); // Display the popup for 3 seconds before showing the menu
-    Windzonemet = false
+
+function showGameMenu() {
+    document.getElementById('menu').style.display = 'block';
+    resetGame();
 }
+
+function stopGameAndShowMenu() {
+    resetGame();
+    toggleMenuDisplay(true); 
+}
+
+function toggleMenuDisplay(show = false) {
+    document.getElementById('menu').style.display = show ? 'block' : 'none';
+}
+
 function checkifwin(player){
     let playerY = player.body.position.y;
     let currentMillis = Date.now();
     
     if (playerY >= winningAltitude && part2Started) {
-        if (timeAboveThreshold === 0) { // Starting the timer
+        if (timeAboveThreshold === 0) { 
             timeAboveThreshold = currentMillis;
         } else if (currentMillis - timeAboveThreshold > requiredTime) {
-            // Player has won the game
+
             showVictoryPopup();
-            timeAboveThreshold = 0; // Reset the timer
+            timeAboveThreshold = 0;
         }
     }else{
         timeAboveThreshold = 0; 
     }
 }
-function showGameMenu() {
-    document.getElementById('menu').style.display = 'block';
-    resetGame(); // Call a function to reset game state
-    
-}
 
 function resetGame() {
-    // Reset all game settings to their initial states
-    // This includes player positions, velocities, game timers, etc.
+
     if (player1 && player1.body) {
         Matter.Body.setPosition(player1.body, respawnPosition);
         Matter.Body.setVelocity(player1.body, { x: 0, y: 0 });
@@ -676,77 +701,56 @@ function resetGame() {
         Matter.Body.setVelocity(player2.body, { x: 0, y: 0 });
     }
 
-    // Reset game flags
+
     gameStarted = false;
     part2Started = false;
     playerReachesTop = false;
-    timeAboveThreshold = 0; // Reset the timer for altitude victory condition
+    timeAboveThreshold = 0; 
 
-    // Reset sound or music if needed
+
     if (backgroundMusic.isPlaying()) {
         backgroundMusic.stop();
     }
 
-    // Hide any game-specific UI and show the main menu
+
     document.getElementById('menu').style.display = 'block';
-    document.querySelectorAll('.game-ui').forEach(ui => ui.style.display = 'none'); // Assuming game UIs have a class 'game-ui'
+    document.querySelectorAll('.game-ui').forEach(ui => ui.style.display = 'none');
 
-    // Optionally clear any game-specific intervals or timeouts
-    // clearInterval(gameInterval);
-    // Reset any other state variables or cleanup tasks
 }
-
-// Function to stop the game and show the menu, might be called from a pause menu or game over logic
-function stopGameAndShowMenu() {
-    resetGame();
-    toggleMenuDisplay(true); // Ensures the menu is shown if hidden
-}
-
-// Helper function to manage game menu display
-function toggleMenuDisplay(show = false) {
-    document.getElementById('menu').style.display = show ? 'block' : 'none';
-}
-// Constants
-const MAX_DISTANCE = 500; // Maximum distance allowed between players
-const TELEPORT_OFFSET = 50; // Distance to place the teleported player next to the other
 
 function localmodeplay() {
-    // Calculate the distance between the players
+
     let distance = dist(player1.body.position.x, player1.body.position.y, player2.body.position.x, player2.body.position.y);
 
-    // Check if the distance is too great
+
     if (distance > MAX_DISTANCE) {
         if (part2Started) {
-            // Part 2 logic: teleport the player above to the player below
+
             if (player1.body.position.y < player2.body.position.y) {
-                // Player 1 is above Player 2
+
                 teleportPlayerTo(player1, player2);
             } else {
-                // Player 2 is above Player 1
+
                 teleportPlayerTo(player2, player1);
             }
         } else {
-            // Normal logic: teleport the player below to the player above
+
             if (player1.body.position.y < player2.body.position.y) {
-                // Player 1 is above Player 2
+
                 teleportPlayerTo(player2, player1);
             } else {
-                // Player 2 is above Player 1
+
                 teleportPlayerTo(player1, player2);
             }
         }
     }
 } 
 
-// Teleport a player to another player's position with an offset
 function teleportPlayerTo(playerToTeleport, referencePlayer) {
-    // Calculate the direction to place the teleported player
     let direction = (playerToTeleport.body.position.x > referencePlayer.body.position.x) ? -1 : 1;
 
-    // Set the new position for the teleported player
     let newX = referencePlayer.body.position.x + direction * TELEPORT_OFFSET;
-    let newY = referencePlayer.body.position.y; // Same vertical position, or adjust as needed
+    let newY = referencePlayer.body.position.y; 
 
-    // Update the position of the player
     Matter.Body.setPosition(playerToTeleport.body, { x: newX, y: newY });
 }

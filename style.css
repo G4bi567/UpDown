@@ -22,7 +22,6 @@ main {
   text-align: center;
   padding: 20px;
   border-radius: 10px;
-  background-color: rgba(36, 49, 71, 0.8); /* Semi-transparent dark slate blue */
   color: #FFFFFF; /* White text */
 }
 
