@@ -114,14 +114,4 @@ function copyLobbyId() {
     });
 }
 
-// Update to handle local player state and send to server
-function updateLocalPlayerState() {
-    const playerState = {
-        position: player1.body.position,
-        velocity: player1.body.velocity
-        // Include other necessary player properties
-    };
-    socket.emit('updatePlayerState', playerState);
-}
-
 
