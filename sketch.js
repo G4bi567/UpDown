@@ -70,10 +70,6 @@ const MAX_DISTANCE = 500;
 const TELEPORT_OFFSET = 50;
 
 
-let lastPhysicsUpdate = Date.now();
-const PHYSICS_UPDATE_RATE = 30;
-
-
 function startGame(mode_name){
     document.getElementById('menu').style.display = 'none';
     mode = mode_name;
@@ -146,10 +142,10 @@ function preload() {
 
 
 function setupSounds() {
-    movementSound.setVolume(0.14);
-    landingSound.setVolume(0.14);
-    jumpSound.setVolume(0.21);
-    backgroundMusic.setVolume(0.1);
+    movementSound.setVolume(GameConfig.soundVolumes.movement);
+    landingSound.setVolume(GameConfig.soundVolumes.landing);
+    jumpSound.setVolume(GameConfig.soundVolumes.jump);
+    backgroundMusic.setVolume(GameConfig.soundVolumes.backgroundMusic);
 }
 
 
@@ -163,6 +159,13 @@ function playWalkSound() {
 }
 
 function createCollisionBlocks(data, collisionArray, yOffset, height) {
+    /**
+ * Generates collision blocks 16x16 pixels from a given dataset and adds them to the game world.
+ * @param {Array} data - Array of data defining blocks.
+ * @param {Array} collisionArray - Array to store created block objects.
+ * @param {number} yOffset - Vertical offset for positioning blocks.
+ * @param {number} height - Height of each block.
+ */
     const collision2D = [];
     for (let i = 0; i < data.length; i += 35) {
         collision2D.push(data.slice(i, i + 35));
@@ -247,10 +250,8 @@ function handleKeyUp(event) {
 }
 
 function applyPlayerForces(player) {
-    if (Date.now() - lastPhysicsUpdate > 1000 / PHYSICS_UPDATE_RATE ) {
-        updatePlayerVelocity(player);
-        lastPhysicsUpdate = Date.now(); 
-    }
+    updatePlayerVelocity(player);
+
 }
 
 function updatePlayerVelocity(player) {
@@ -262,6 +263,14 @@ function updatePlayerVelocity(player) {
 }
 
 function handlePlayerMovement(player, leftKey, rightKey, lookingLeft) {
+    /**
+     * Applies dynamic forces to a player based on current game inputs and player status.
+     * It adjusts player velocity depending on input keys and current game mode.
+     * - Prevents movement if the player is hit.
+     * - Adjusts velocity based on left or right movement commands.
+     * - Plays walking sounds when movement occurs.
+     * - Sets the new velocity in the physics engine.
+     */
     let playerVelocity = { x: player.body.velocity.x, y: player.body.velocity.y };
 
     if (!(player === player1 ? player1hit : player2hit)) {
@@ -388,6 +397,7 @@ function updateGame() {
 }
 
 function drawMultiplayerView() {
+
     const { midpointX, midpointY, dynamicZoom } = calculateCameraSettings(player1, player2);
     setupCamera(midpointX, midpointY, dynamicZoom);
     drawGameScene();  
@@ -396,6 +406,11 @@ function drawMultiplayerView() {
 }
 
 function drawSinglePlayerView() {
+    /**
+     * Draws the game view for a single player.
+     * Sets up the camera focused on the single player, managing zoom and translation to keep the player centered.
+     * Handles drawing of the game's background, the player, and checks for interactions with game elements.
+     */
     if (!player1 || !player1.body) {
         console.log("Player1 or player1.body is undefined");
         return;
@@ -410,6 +425,15 @@ function drawSinglePlayerView() {
 }
 
 function calculateCameraSettings(player1, player2) {
+    /**
+     * Calculates camera settings based on players' positions for dynamic zoom and focus in multiplayer mode.
+     * - Computes the midpoint between two players for camera centering.
+     * - Determines the zoom level based on the distance between players to ensure both are visible and the action is focused.
+     * 
+     * @param {Object} player1 - First player object.
+     * @param {Object} player2 - Second player object.
+     * @returns {Object} Contains midpointX, midpointY, and dynamicZoom for camera setup.
+     */
     const midpointX = (player1.body.position.x + player2.body.position.x) / 2;
     const midpointY = (player1.body.position.y + player2.body.position.y) / 2;
     const distanceBetweenPlayers = dist(player1.body.position.x, player1.body.position.y, player2.body.position.x, player2.body.position.y);
@@ -418,6 +442,14 @@ function calculateCameraSettings(player1, player2) {
 }
 
 function setupCamera(x, y, zoom) {
+    /**
+     * Sets up the camera for the game view, applying translations and scaling based on the given parameters.
+     * This function also manages background drawing and updates the physics engine state.
+     * 
+     * @param {number} x - The x-coordinate for camera translation.
+     * @param {number} y - The y-coordinate for camera translation.
+     * @param {number} zoom - The zoom level to apply.
+     */
     push(); 
     if (spawnPlayer2){
     translate(width / 2 - x * zoom, height / 2 - y * zoom);

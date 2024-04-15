@@ -30,7 +30,6 @@ function createNewLobby() {
             
             // Hide the input and buttons for creating or joining a lobby
             document.getElementById('multiplayerLobby').style.display = 'none';
-// Assuming you have a button with this ID
 
             // Display the new lobby ID and the Copy ID button
             document.getElementById('newLobbyId').textContent = newLobbyId;
@@ -68,7 +67,6 @@ function joinLobby() {
             newLobbyId = data.lobbyId
             // Hide the input and buttons for creating or joining a lobby
             document.getElementById('multiplayerLobby').style.display = 'none';
-// Assuming you have a button with this ID
 
             // Display the new lobby ID and the Copy ID button
             document.getElementById('newLobbyId').textContent = newLobbyId;
