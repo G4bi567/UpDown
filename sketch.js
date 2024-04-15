@@ -100,30 +100,36 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     engine = Engine.create();
     world = engine.world;
-    player1 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
-    player1.body.label="player1"
-    Composite.add(world, player1);
+    
+    // Create player 1
+    player1 = createPlayer(respawnPosition.x, respawnPosition.y, "player1");
 
+    // Create player 2 if needed
     if (spawnPlayer2) {
-        player2 = new Player(respawnPositionPlayer2.x, respawnPositionPlayer2.y, 16, 24);
-        player2.body.label="player2"
-        Composite.add(world, player2);
-        if (playerRole == "player2"){
-            player1 = new Player(respawnPositionPlayer2.x, respawnPositionPlayer2.y, 16, 24)
-            player1.body.label="player1"
-            player2 = new Player(respawnPosition.x, respawnPosition.y, 16, 24);
-            player2.body.label="player2"
+        player2 = createPlayer(respawnPositionPlayer2.x, respawnPositionPlayer2.y, "player2");
+        
+        // If playerRole is "player2", swap the players
+        if (playerRole == "player2") {
+            // Swap positions and labels
+            const tempPosition = { x: player1.body.position.x, y: player1.body.position.y };
+            player1 = createPlayer(player2.body.position.x, player2.body.position.y, "player1");
+            player2 = createPlayer(tempPosition.x, tempPosition.y, "player2");
         }
-        
-        
     }
-   
     createCollisionBlocks(floorCollision, CollisionBlocks, 50, 100);
     createCollisionBlocks(platformCollision, platformCollisionBlocks, 5, 2);
 
     setupSounds();
-
 }
+
+function createPlayer(x, y, label) {
+    // Create a new player object
+    const player = new Player(x, y, 16, 24);
+    player.body.label = label;
+    Composite.add(world, player);
+    return player;
+}
+
 
 function toggleBackgroundMusic() {
     if (backgroundMusic.isPlaying()) {
@@ -372,7 +378,7 @@ function checkGameConditions() {
         }
     } else {
         checkPlayerFall(player1);
-        if (spawnPlayer2) {
+        if (spawnPlayer2 && mode!="multiplayer") {
             checkPlayerFall(player2);
         }
     }
@@ -508,11 +514,11 @@ function drawPlayers(player1, player2, zoom) {
         applyPlayerForces(player);
         drawAttackGauge(player);
         player.show();
-        checkPlayerInteractions(player, zoom);
+        checkPlayerInteractions(player);
     });
 }
 
-function checkPlayerInteractions(player, zoom) {
+function checkPlayerInteractions(player) {
     CollisionBlocks.forEach(block => {
         block.show();
         block.friction = 0;
@@ -548,6 +554,7 @@ function startPart2() {
 }
 
 function checkPlayerFall(player) {
+
     const maxFallSpeed  = 5.3
     if (player.body.velocity.y > maxFallSpeed  && part2Started) {
         hasPlayerFallen = true;
