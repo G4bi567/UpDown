@@ -397,15 +397,21 @@ function handlePlayerConditions() {
 }
 
 function handleWindConditions() {
-    if (!Windzonemet) return;
 
     if (player1.body.position.y < windStart) {
-        Windcareful();
+        if (Windzonemet == true){
+            Windcareful();
+
+        }
+
         applyWindForce(player1);
     }
 
     if (spawnPlayer2 && mode == "local" && player2.body.position.y < windStart) {
-        Windcareful();
+        if (Windzonemet == true){
+            Windcareful();
+        }
+
         applyWindForce(player2);
     }
 }
